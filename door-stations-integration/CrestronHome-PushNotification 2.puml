@@ -1,0 +1,70 @@
+@startuml PushNotification
+Interface IRpcPushNotification {
+    +PushNotificationResult RegisterPushNotificationHandle(PushNotificationRegistrationRequest request)
+    +PushNotificationResult UpdatePushNotificationProfile(PushNotificationProfileRequest request)
+    +PushNotificationResult UnregisterPushNotificationHandle(PushNotificationUnregistrationRequest request)
+}
+class PushNotificationRegistrationRequest {
+    +DeviceId: Guid                         'This is a unique identifier for the device that is registering for push notifications. uuid/guid to be determined in a refinement session by the device'
+    +Platform: PushNotificationPlatform     'This indicates the push notification platform (APNS or FCM) that the device is using'    
+    +PushToken: string                      'This is the token provided by the push notification service (APNS or FCM) that identifies the device for push notifications'   
+}
+class PushNotificationUnregistrationRequest {
+    +DeviceId: Guid
+    +Platform: PushNotificationPlatform
+}
+class PushNotificationProfileRequest {
+    +DeviceId: Guid
+    +UserType: string                       'This indicates the type of user associated with the device'
+    +Tags: string[]                         'This is an array of strings representing the tags or topics that the user wants to subscribe to for receiving push notifications (e.g., ["Security", "Energy", "HVAC"])'
+    +NotificationWindowStartTime: string    'This is the start time of the notification window during which the user wants to receive push notifications, in ISO 8601 format (e.g., "08:00:00Z")'
+    +NotificationWindowEndTime: string      'This is the end time of the notification window during which the user wants to receive push notifications, in ISO 8601 format (e.g., "20:00:00Z")' 
+    +IsActive: bool                         'This indicates whether the push notification profile is active or not. If false, the user will not receive any push notifications until they activate their profile.'  
+}
+class PushNotificationResult {
+    +Status: PushNotificationRegistrationStatus 'This indicates the result of the push notification registration, update, or unregistration operation'
+    +Message: string                            'This is a message providing additional information about the result of the operation, such as error details if the operation was not successful'
+    +ErrorMessage: string                       'This is a message providing details about any error that occurred during the operation, if applicable. It may be empty if the operation was successful or if no additional error information is available.'
+}
+enum PushNotificationPlatform
+{
+    /// <summary>
+    /// The push notification platform is not specified.
+    /// </summary>
+    Uninitialized = 0,
+
+    /// <summary>
+    /// The push notification platform is Apple Push Notification Service (APNS).
+    /// </summary>
+    APNS,
+
+    /// <summary>
+    /// The push notification platform is Firebase Cloud Messaging (FCM).
+    /// </summary>
+    FCM
+    
+}
+enum PushNotificationRegistrationStatus
+{
+	/// <summary>
+	/// Uninitialized value.
+	/// </summary>
+	Uninitialized = 0,
+
+	/// <summary>
+	/// The registration was accepted and queued to be sent to the cloud service.
+	/// </summary>
+	Accepted,
+
+	/// <summary>
+	/// The request was rejected because one or more required values were missing or invalid.
+	/// </summary>
+	InvalidRequest,
+
+	/// <summary>
+	/// The registration could not be sent because the cloud service is unavailable,
+	/// for example when the device certificate required for authentication is not present.
+	/// </summary>
+	Unavailable
+}
+@enduml

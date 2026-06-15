@@ -1,0 +1,81 @@
+
+@startuml PushNotificationSequence
+
+title Push Notification API - Sequence Diagram Example
+skinparam defaultFontName sans-serif
+
+actor Client
+participant "IRpcPushNotification API" as API
+participant "Notification Service" as Service
+database "Device Store" as DB
+
+== Registration Flow ==
+
+Client -> API : RegisterPushNotificationHandle(request)
+activate API
+
+API -> API : Validate request
+
+alt Invalid request
+    API --> Client : PushNotificationResult(Status=InvalidRequest)
+    deactivate API
+else Valid request
+    API -> Service : Register(deviceId, platform, token)
+    activate Service
+
+    Service -> DB : Save device registration
+    activate DB
+    DB --> Service : OK
+    deactivate DB
+
+    Service --> API : Success
+    deactivate Service
+
+    API --> Client : PushNotificationResult(Status=Accepted)
+    deactivate API
+end
+
+== Update Profile Flow ==
+
+Client -> API : UpdatePushNotificationProfile(request)
+activate API
+
+opt Profile is active
+    API -> Service : UpdateProfile(deviceId, tags, window)
+    activate Service
+
+    loop For each tag
+        Service -> DB : Save tag subscription
+    end
+
+    Service --> API : Success
+    deactivate Service
+end
+
+API --> Client : PushNotificationResult(Status=Accepted)
+deactivate API
+
+== Unregister Flow ==
+
+Client -> API : UnregisterPushNotificationHandle(request)
+activate API
+
+API -> Service : Unregister(deviceId, platform)
+activate Service
+
+Service -> DB : Remove device
+activate DB
+DB --> Service : OK
+deactivate DB
+
+Service --> API : Success
+deactivate Service
+
+API --> Client : PushNotificationResult(Status=Accepted)
+deactivate API
+
+note right of Client
+DeviceId is a GUID\nPlatform = APNS or FCM
+end note
+
+@enduml
