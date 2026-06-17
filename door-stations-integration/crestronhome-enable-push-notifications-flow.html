@@ -207,13 +207,15 @@
     transform: translateX(-50%);
     background: var(--card);
     border-radius: 999px;
-    padding: 16px 56px;
+    min-width: 280px;
+    text-align: center;
+    padding: 16px 16px;
     box-shadow: var(--shadow);
     font-weight: 700;
     font-size: 18px;
   }
 
-  /* ── Screen 2: Home (Chase House) ─────────────── */
+  /* ── Screen 2: Home (My Home) ─────────────── */
   .home-hero {
     position: relative;
     height: 380px;
@@ -751,7 +753,7 @@
               </svg>
             </span>
           </div>
-          <div class="system-name">Chase House</div>
+          <div class="system-name">My Home</div>
           <div class="system-sub">This home is connected and ready.</div>
         </div>
         <div class="system-more">•••</div>
@@ -780,11 +782,11 @@
         <div class="system-more">•••</div>
       </div>
 
-      <div class="org-pill">Crestron Demo</div>
+      <div class="org-pill">Mock Door Stations Settings</div>
     </div>
   </div>
 
-  <!-- ─── SCREEN 2: Chase House Home ─── -->
+  <!-- ─── SCREEN 2: My Home Home ─── -->
   <div class="screen" id="screen-2">
     <div class="screen-body" style="padding-top: 0;">
       <div class="home-hero">
@@ -794,7 +796,7 @@
           </svg>
         </div>
         <div class="home-title-block">
-          <div class="home-title">Chase House</div>
+          <div class="home-title">My Home</div>
           <div class="home-sub">All doors are locked.</div>
         </div>
       </div>
@@ -841,7 +843,7 @@
           </svg>
         </div>
         <div class="home-title-block" style="opacity: 0.3;">
-          <div class="home-title">Chase House</div>
+          <div class="home-title">My Home</div>
           <div class="home-sub">All doors are locked.</div>
         </div>
       </div>
@@ -906,7 +908,7 @@
     <div class="screen-body" style="padding-top: 54px; overflow-y: auto;">
       <div class="sheet-grabber"></div>
       <div class="manage-title">Manage</div>
-      <div class="manage-sub">Chase House</div>
+      <div class="manage-sub">My Home</div>
 
       <div class="group-label">SETTINGS</div>
       <div class="list-group">
@@ -1034,7 +1036,7 @@
             <polyline points="15 18 9 12 15 6"/>
           </svg>
         </div>
-        <div class="sheet-title">Chase House</div>
+        <div class="sheet-title">My Home</div>
         <div class="sheet-subtitle">USERS</div>
       </div>
 
@@ -1145,7 +1147,7 @@
               <path d="M10 21a2 2 0 0 0 4 0"/>
             </svg>
           </span>
-          <span>Push Notifications<span class="new-badge">NEW</span></span>
+          <span>Notifications<span class="new-badge">NEW</span></span>
           <span class="chev">›</span>
         </div>
       </div>
@@ -1178,7 +1180,7 @@
       </div>
 
       <div class="pn-help" id="pn-help">
-        You'll receive push notifications from <b>Chase House</b> on this device. Tap the toggle to turn them off.
+        You'll receive push notifications from <b>My Home</b> on this device. Tap the toggle to turn them off.
       </div>
 
       <div class="enabled-only" id="enabled-section">
@@ -1290,13 +1292,13 @@
       sw.classList.remove('off');
       dot.classList.remove('off');
       text.textContent = 'Enabled';
-      help.innerHTML = "You'll receive push notifications from <b>Chase House</b> on this device. Tap the toggle to turn them off.";
+      help.innerHTML = "You'll receive push notifications from <b>My Home</b> on this device. Tap the toggle to turn them off.";
       enabledSection.classList.remove('hidden');
     } else {
       sw.classList.add('off');
       dot.classList.add('off');
       text.textContent = 'Disabled';
-      help.innerHTML = "Push notifications are off for this device. You won't be alerted when something happens at <b>Chase House</b>.";
+      help.innerHTML = "Push notifications are off for this device. You won't be alerted when something happens at <b>My Home</b>.";
       enabledSection.classList.add('hidden');
     }
   }
