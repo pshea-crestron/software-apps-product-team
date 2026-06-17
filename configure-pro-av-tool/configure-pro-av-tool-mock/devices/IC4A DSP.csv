@@ -1,0 +1,10 @@
+Model,Input/Channel,DSP 1,DSP 2,DSP 3,DSP 4,DSP 5,DSP 6,DSP 7,DSP 8,DSP 9,DSP 10,DSP 11,Output/Channel
+"DM-NAX-IC4A
+(friendly name)",AoIP in 1L,Level,Mute,5x4 Matrix Mixer,Signal Detect,Tone,PEQ-10,Output Settings,Volume,Delay,Mute,Identify,Internal Speaker
+,AoIP in 1R,Level,Mute,,Signal Detect,Tone,PEQ-10,Output Settings,Volume,Delay,Mute,Identify,Passive Speaker 1
+,AoIP in 2L,Level,Mute,,Signal Detect,Tone,PEQ-10,Output Settings,Volume,Delay,Mute,Identify,Passive Speaker 2
+,AoIP in 2R,Level,Mute,,Signal Detect,Tone,PEQ-10,Output Settings,Volume,Delay,Mute,Identify,Passive Speaker 3
+,Signal Generator,,,,,,,,,,,,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,,
+,,,,,,,,,,,,,

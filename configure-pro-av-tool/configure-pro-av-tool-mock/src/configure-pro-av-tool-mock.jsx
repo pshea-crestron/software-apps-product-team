@@ -12,33 +12,33 @@ const ROOMS_TREE = [
     children: [
       { id: "kitchen", name: "Kitchen" },
       { id: "living-room", name: "Living Room" },
-      { id: "family-room", name: "Family Room" },
-      { id: "office", name: "Office" },
+      // { id: "family-room", name: "Family Room" },
+      // { id: "office", name: "Office" },
     ]
   },
-  {
-    id: "2nd-floor", name: "2nd Floor", type: "floor",
-    children: [
-      { id: "master-bedroom", name: "Master Bedroom" },
-      { id: "bedroom-2", name: "Bedroom 2" },
-      { id: "bedroom-3", name: "Bedroom 3" },
-    ]
-  },
-  {
-    id: "basement", name: "Basement", type: "floor",
-    children: [
-      { id: "theater", name: "Theater" },
-      { id: "game-room", name: "Game Room" },
-    ]
-  },
-  {
-    id: "outside", name: "Outside", type: "floor",
-    children: [
-      { id: "deck", name: "Deck" },
-      { id: "pool", name: "Pool" },
-      { id: "front-porch", name: "Front Porch" },
-    ]
-  },
+  // {
+  //   id: "2nd-floor", name: "2nd Floor", type: "floor",
+  //   children: [
+  //     { id: "master-bedroom", name: "Master Bedroom" },
+  //     { id: "bedroom-2", name: "Bedroom 2" },
+  //     { id: "bedroom-3", name: "Bedroom 3" },
+  //   ]
+  // },
+  // {
+  //   id: "basement", name: "Basement", type: "floor",
+  //   children: [
+  //     { id: "theater", name: "Theater" },
+  //     { id: "game-room", name: "Game Room" },
+  //   ]
+  // },
+  // {
+  //   id: "outside", name: "Outside", type: "floor",
+  //   children: [
+  //     { id: "deck", name: "Deck" },
+  //     { id: "pool", name: "Pool" },
+  //     { id: "front-porch", name: "Front Porch" },
+  //   ]
+  // },
 ];
 
 const inp = (id, label, signal) => ({ id, label, signal });
@@ -71,7 +71,7 @@ const DEVICES = [
   },
   // Living Room
   { id: "lr-appletv", name: "Apple TV", model: "Apple TV 4K (3rd Gen)", manufacturer: "Apple", room: "living-room", type: "Media Player", status: "Online",
-    inputs: [], outputs: [out("hdmi-out","HDMI Out","hdmi")]
+    inputs: [], outputs: [out("hdmi-out","HDMI Out","hdmi"), out("bt-l","Bluetooth Out L","bluetooth"), out("bt-r","Bluetooth Out R","bluetooth")]
   },
   { id: "lr-tv", name: "LG TV", model: "LG OLED77C3", manufacturer: "LG", room: "living-room", type: "Display", status: "Online",
     inputs: [inp("hdmi1","HDMI 1","hdmi"), inp("hdmi2","HDMI 2","hdmi"), inp("hdmi3","HDMI 3 (eARC)","hdmi"), inp("hdmi4","HDMI 4","hdmi")],
@@ -83,79 +83,79 @@ const DEVICES = [
     outputs: [out("aout-l","Analog Line Out L","analog_audio"), out("aout-r","Analog Line Out R","analog_audio"), out("usb-l","USB Out L","digital_audio"), out("usb-r","USB Out R","digital_audio"),
               out("aoip-o1l","AoIP Out 1L","aoip"), out("aoip-o1r","AoIP Out 1R","aoip"), out("aoip-o2l","AoIP Out 2L","aoip"), out("aoip-o2r","AoIP Out 2R","aoip")]
   },
-  // Family Room
-  { id: "fr-tv", name: "Sony TV", model: "Sony XR-75X95L", manufacturer: "Sony", room: "family-room", type: "Display", status: "Online",
-    inputs: [inp("hdmi1","HDMI 1","hdmi"), inp("hdmi2","HDMI 2","hdmi")],
-    outputs: [out("rv1","Room Video 1","hdmi"), out("opt","Optical Out","digital_audio")]
-  },
-  { id: "fr-firetv", name: "Fire TV Cube", model: "Fire TV Cube (3rd Gen)", manufacturer: "Amazon", room: "family-room", type: "Media Player", status: "Online",
-    inputs: [], outputs: [out("hdmi-out","HDMI Out","hdmi")]
-  },
-  // Office
-  { id: "of-display", name: "Dell Monitor", model: "Dell U3223QE", manufacturer: "Dell", room: "office", type: "Display", status: "Online",
-    inputs: [inp("hdmi1","HDMI 1","hdmi"), inp("usb-c","USB-C","hdmi")],
-    outputs: [out("dp-out","DP Out","hdmi")]
-  },
-  // Master Bedroom
-  { id: "mb-tv", name: "Samsung TV", model: "Samsung QN55S90C", manufacturer: "Samsung", room: "master-bedroom", type: "Display", status: "Online",
-    inputs: [inp("hdmi1","HDMI 1","hdmi"), inp("hdmi2","HDMI 2","hdmi")],
-    outputs: [out("rv1","Room Video 1","hdmi"), out("opt","Optical Out","digital_audio")]
-  },
-  { id: "mb-sonos", name: "Sonos Era 300", model: "Sonos Era 300", manufacturer: "Sonos", room: "master-bedroom", type: "Speaker", status: "Online",
-    inputs: [inp("line-in","Line In","analog_audio"), inp("wifi","WiFi In","aoip")],
-    outputs: [out("spk-l","Speaker L","analog_audio"), out("spk-r","Speaker R","analog_audio")]
-  },
-  // Bedroom 2
-  { id: "b2-tv", name: "Vizio TV", model: "Vizio M-Series 4K", manufacturer: "Vizio", room: "bedroom-2", type: "Display", status: "Online",
-    inputs: [inp("hdmi1","HDMI 1","hdmi")], outputs: [out("opt","Optical Out","digital_audio")]
-  },
-  // Bedroom 3
-  { id: "b3-spk", name: "Sonos One", model: "Sonos One SL", manufacturer: "Sonos", room: "bedroom-3", type: "Speaker", status: "Offline",
-    inputs: [inp("wifi","WiFi In","aoip")], outputs: []
-  },
-  // Theater
-  { id: "th-proj", name: "Epson Projector", model: "Epson LS800", manufacturer: "Epson", room: "theater", type: "Projector", status: "Online",
-    inputs: [inp("hdmi1","HDMI 1","hdmi"), inp("hdmi2","HDMI 2","hdmi")], outputs: []
-  },
-  { id: "th-receiver", name: "Bose AV Receiver", model: "Lifestyle 235", manufacturer: "Bose", room: "theater", type: "AV Receiver", status: "Online",
-    inputs: [inp("hdmi1","HDMI 1","hdmi"), inp("hdmi2","HDMI 2","hdmi"), inp("opt","Optical In","digital_audio"), inp("ain","Analog In","analog_audio")],
-    outputs: [out("hdmi-out","HDMI Out","hdmi"), out("zone1","Zone 1 Out","analog_audio"), out("zone2","Zone 2 Out","analog_audio")]
-  },
-  { id: "th-appletv", name: "Apple TV 4K", model: "Apple TV 4K (3rd Gen)", manufacturer: "Apple", room: "theater", type: "Media Player", status: "Online",
-    inputs: [], outputs: [out("hdmi-out","HDMI Out","hdmi")]
-  },
-  { id: "th-btio", name: "DM-NAX-BTIO-1G", model: "DM-NAX-BTIO-1G", manufacturer: "Crestron", room: "theater", type: "DSP", status: "Online",
-    inputs: [inp("ain1","Analog Line In 1","analog_audio"), inp("ain2","Analog Line In 2","analog_audio"), inp("bt-l","Bluetooth In L","bluetooth"), inp("bt-r","Bluetooth In R","bluetooth"),
-             inp("aoip-i1l","AoIP In 1L","aoip"), inp("aoip-i1r","AoIP In 1R","aoip"), inp("aoip-i2l","AoIP In 2L","aoip"), inp("aoip-i2r","AoIP In 2R","aoip")],
-    outputs: [out("aout-l","Analog Line Out L","analog_audio"), out("aout-r","Analog Line Out R","analog_audio"), out("usb-l","USB Out L","digital_audio"), out("usb-r","USB Out R","digital_audio"),
-              out("aoip-o1l","AoIP Out 1L","aoip"), out("aoip-o1r","AoIP Out 1R","aoip"), out("aoip-o2l","AoIP Out 2L","aoip"), out("aoip-o2r","AoIP Out 2R","aoip")]
-  },
-  { id: "th-screen", name: "Screen Innovations", model: "SI Solo Pro 2", manufacturer: "Screen Innovations", room: "theater", type: "Shade", status: "Online",
-    inputs: [], outputs: []
-  },
-  // Game Room
-  { id: "gr-tv", name: "LG TV", model: "LG OLED55G3", manufacturer: "LG", room: "game-room", type: "Display", status: "Online",
-    inputs: [inp("hdmi1","HDMI 1","hdmi"), inp("hdmi2","HDMI 2","hdmi")],
-    outputs: [out("rv1","Room Video 1","hdmi"), out("opt","Optical Out","digital_audio")]
-  },
-  { id: "gr-ps5", name: "PlayStation 5", model: "Sony PlayStation 5", manufacturer: "Sony", room: "game-room", type: "Media Player", status: "Online",
-    inputs: [], outputs: [out("hdmi-out","HDMI Out","hdmi")]
-  },
-  // Outside
-  { id: "dk-spk", name: "Sonos Outdoor", model: "Sonos Outdoor", manufacturer: "Sonos", room: "deck", type: "Speaker", status: "Online",
-    inputs: [inp("wifi","WiFi In","aoip")], outputs: []
-  },
-  { id: "pl-spk", name: "Polk Audio", model: "Polk Atrium 6", manufacturer: "Polk Audio", room: "pool", type: "Speaker", status: "Online",
-    inputs: [inp("wire","Speaker Wire In","analog_audio")], outputs: []
-  },
+  // // Family Room
+  // { id: "fr-tv", name: "Sony TV", model: "Sony XR-75X95L", manufacturer: "Sony", room: "family-room", type: "Display", status: "Online",
+  //   inputs: [inp("hdmi1","HDMI 1","hdmi"), inp("hdmi2","HDMI 2","hdmi")],
+  //   outputs: [out("rv1","Room Video 1","hdmi"), out("opt","Optical Out","digital_audio")]
+  // },
+  // { id: "fr-firetv", name: "Fire TV Cube", model: "Fire TV Cube (3rd Gen)", manufacturer: "Amazon", room: "family-room", type: "Media Player", status: "Online",
+  //   inputs: [], outputs: [out("hdmi-out","HDMI Out","hdmi")]
+  // },
+  // // Office
+  // { id: "of-display", name: "Dell Monitor", model: "Dell U3223QE", manufacturer: "Dell", room: "office", type: "Display", status: "Online",
+  //   inputs: [inp("hdmi1","HDMI 1","hdmi"), inp("usb-c","USB-C","hdmi")],
+  //   outputs: [out("dp-out","DP Out","hdmi")]
+  // },
+  // // Master Bedroom
+  // { id: "mb-tv", name: "Samsung TV", model: "Samsung QN55S90C", manufacturer: "Samsung", room: "master-bedroom", type: "Display", status: "Online",
+  //   inputs: [inp("hdmi1","HDMI 1","hdmi"), inp("hdmi2","HDMI 2","hdmi")],
+  //   outputs: [out("rv1","Room Video 1","hdmi"), out("opt","Optical Out","digital_audio")]
+  // },
+  // { id: "mb-sonos", name: "Sonos Era 300", model: "Sonos Era 300", manufacturer: "Sonos", room: "master-bedroom", type: "Speaker", status: "Online",
+  //   inputs: [inp("line-in","Line In","analog_audio"), inp("wifi","WiFi In","aoip")],
+  //   outputs: [out("spk-l","Speaker L","analog_audio"), out("spk-r","Speaker R","analog_audio")]
+  // },
+  // // Bedroom 2
+  // { id: "b2-tv", name: "Vizio TV", model: "Vizio M-Series 4K", manufacturer: "Vizio", room: "bedroom-2", type: "Display", status: "Online",
+  //   inputs: [inp("hdmi1","HDMI 1","hdmi")], outputs: [out("opt","Optical Out","digital_audio")]
+  // },
+  // // Bedroom 3
+  // { id: "b3-spk", name: "Sonos One", model: "Sonos One SL", manufacturer: "Sonos", room: "bedroom-3", type: "Speaker", status: "Offline",
+  //   inputs: [inp("wifi","WiFi In","aoip")], outputs: []
+  // },
+  // // Theater
+  // { id: "th-proj", name: "Epson Projector", model: "Epson LS800", manufacturer: "Epson", room: "theater", type: "Projector", status: "Online",
+  //   inputs: [inp("hdmi1","HDMI 1","hdmi"), inp("hdmi2","HDMI 2","hdmi")], outputs: []
+  // },
+  // { id: "th-receiver", name: "Bose AV Receiver", model: "Lifestyle 235", manufacturer: "Bose", room: "theater", type: "AV Receiver", status: "Online",
+  //   inputs: [inp("hdmi1","HDMI 1","hdmi"), inp("hdmi2","HDMI 2","hdmi"), inp("opt","Optical In","digital_audio"), inp("ain","Analog In","analog_audio")],
+  //   outputs: [out("hdmi-out","HDMI Out","hdmi"), out("zone1","Zone 1 Out","analog_audio"), out("zone2","Zone 2 Out","analog_audio")]
+  // },
+  // { id: "th-appletv", name: "Apple TV 4K", model: "Apple TV 4K (3rd Gen)", manufacturer: "Apple", room: "theater", type: "Media Player", status: "Online",
+  //   inputs: [], outputs: [out("hdmi-out","HDMI Out","hdmi")]
+  // },
+  // { id: "th-btio", name: "DM-NAX-BTIO-1G", model: "DM-NAX-BTIO-1G", manufacturer: "Crestron", room: "theater", type: "DSP", status: "Online",
+  //   inputs: [inp("ain1","Analog Line In 1","analog_audio"), inp("ain2","Analog Line In 2","analog_audio"), inp("bt-l","Bluetooth In L","bluetooth"), inp("bt-r","Bluetooth In R","bluetooth"),
+  //            inp("aoip-i1l","AoIP In 1L","aoip"), inp("aoip-i1r","AoIP In 1R","aoip"), inp("aoip-i2l","AoIP In 2L","aoip"), inp("aoip-i2r","AoIP In 2R","aoip")],
+  //   outputs: [out("aout-l","Analog Line Out L","analog_audio"), out("aout-r","Analog Line Out R","analog_audio"), out("usb-l","USB Out L","digital_audio"), out("usb-r","USB Out R","digital_audio"),
+  //             out("aoip-o1l","AoIP Out 1L","aoip"), out("aoip-o1r","AoIP Out 1R","aoip"), out("aoip-o2l","AoIP Out 2L","aoip"), out("aoip-o2r","AoIP Out 2R","aoip")]
+  // },
+  // { id: "th-screen", name: "Screen Innovations", model: "SI Solo Pro 2", manufacturer: "Screen Innovations", room: "theater", type: "Shade", status: "Online",
+  //   inputs: [], outputs: []
+  // },
+  // // Game Room
+  // { id: "gr-tv", name: "LG TV", model: "LG OLED55G3", manufacturer: "LG", room: "game-room", type: "Display", status: "Online",
+  //   inputs: [inp("hdmi1","HDMI 1","hdmi"), inp("hdmi2","HDMI 2","hdmi")],
+  //   outputs: [out("rv1","Room Video 1","hdmi"), out("opt","Optical Out","digital_audio")]
+  // },
+  // { id: "gr-ps5", name: "PlayStation 5", model: "Sony PlayStation 5", manufacturer: "Sony", room: "game-room", type: "Media Player", status: "Online",
+  //   inputs: [], outputs: [out("hdmi-out","HDMI Out","hdmi")]
+  // },
+  // // Outside
+  // { id: "dk-spk", name: "Sonos Outdoor", model: "Sonos Outdoor", manufacturer: "Sonos", room: "deck", type: "Speaker", status: "Online",
+  //   inputs: [inp("wifi","WiFi In","aoip")], outputs: []
+  // },
+  // { id: "pl-spk", name: "Polk Audio", model: "Polk Atrium 6", manufacturer: "Polk Audio", room: "pool", type: "Speaker", status: "Online",
+  //   inputs: [inp("wire","Speaker Wire In","analog_audio")], outputs: []
+  // },
 ];
 
 const INITIAL_ROUTES = [
   { id: "r1", fromDevice: "lr-appletv", fromPort: "hdmi-out", toDevice: "lr-tv", toPort: "hdmi1", signalType: "hdmi" },
-  { id: "r3", fromDevice: "th-appletv", fromPort: "hdmi-out", toDevice: "th-receiver", toPort: "hdmi1", signalType: "hdmi" },
-  { id: "r4", fromDevice: "th-receiver", fromPort: "hdmi-out", toDevice: "th-proj", toPort: "hdmi1", signalType: "hdmi" },
-  { id: "r5", fromDevice: "gr-ps5", fromPort: "hdmi-out", toDevice: "gr-tv", toPort: "hdmi1", signalType: "hdmi" },
-  { id: "r6", fromDevice: "fr-firetv", fromPort: "hdmi-out", toDevice: "fr-tv", toPort: "hdmi1", signalType: "hdmi" },
+  //{ id: "r3", fromDevice: "th-appletv", fromPort: "hdmi-out", toDevice: "th-receiver", toPort: "hdmi1", signalType: "hdmi" },
+  //{ id: "r4", fromDevice: "th-receiver", fromPort: "hdmi-out", toDevice: "th-proj", toPort: "hdmi1", signalType: "hdmi" },
+  //{ id: "r5", fromDevice: "gr-ps5", fromPort: "hdmi-out", toDevice: "gr-tv", toPort: "hdmi1", signalType: "hdmi" },
+  //{ id: "r6", fromDevice: "fr-firetv", fromPort: "hdmi-out", toDevice: "fr-tv", toPort: "hdmi1", signalType: "hdmi" },
   { id: "r7", fromDevice: "eq-nax-aio", fromPort: "aoip-o1l", toDevice: "eq-nax-amp", toPort: "aoip-i1l", signalType: "aoip" },
   { id: "r8", fromDevice: "eq-nax-aio", fromPort: "aoip-o1r", toDevice: "eq-nax-amp", toPort: "aoip-i1r", signalType: "aoip" },
   { id: "r9", fromDevice: "lr-btio", fromPort: "aoip-o1l", toDevice: "eq-nax-amp", toPort: "aoip-i2l", signalType: "aoip" },
@@ -164,19 +164,19 @@ const INITIAL_ROUTES = [
 
 // Room clusters for canvas layout — generous spacing between rooms
 const ROOM_LAYOUT = {
-  "equipment-room": { x: 40, y: 40, label: "Equipment Room" },
-  "kitchen": { x: 700, y: 40, label: "Kitchen" },
-  "living-room": { x: 700, y: 500, label: "Living Room" },
-  "family-room": { x: 700, y: 1200, label: "Family Room" },
-  "office": { x: 700, y: 1650, label: "Office" },
-  "master-bedroom": { x: 1400, y: 40, label: "Master Bedroom" },
-  "bedroom-2": { x: 1400, y: 480, label: "Bedroom 2" },
-  "bedroom-3": { x: 1400, y: 760, label: "Bedroom 3" },
-  "theater": { x: 1400, y: 1040, label: "Theater" },
-  "game-room": { x: 1400, y: 1700, label: "Game Room" },
-  "deck": { x: 2100, y: 40, label: "Deck" },
-  "pool": { x: 2100, y: 340, label: "Pool" },
-  "front-porch": { x: 2100, y: 640, label: "Front Porch" },
+  "equipment-room": { x: 500, y: 40, label: "Equipment Room" },
+  "kitchen": { x: 700, y: 700, label: "Kitchen" },
+  "living-room": { x: 0, y: 700, label: "Living Room" },
+  // "family-room": { x: 700, y: 1200, label: "Family Room" },
+  // "office": { x: 700, y: 1650, label: "Office" },
+  // "master-bedroom": { x: 1400, y: 40, label: "Master Bedroom" },
+  // "bedroom-2": { x: 1400, y: 480, label: "Bedroom 2" },
+  // "bedroom-3": { x: 1400, y: 760, label: "Bedroom 3" },
+  // "theater": { x: 1400, y: 1040, label: "Theater" },
+  // "game-room": { x: 1400, y: 1700, label: "Game Room" },
+  // "deck": { x: 2100, y: 40, label: "Deck" },
+  // "pool": { x: 2100, y: 340, label: "Pool" },
+  // "front-porch": { x: 2100, y: 640, label: "Front Porch" },
 };
 
 function buildDevicePositions() {

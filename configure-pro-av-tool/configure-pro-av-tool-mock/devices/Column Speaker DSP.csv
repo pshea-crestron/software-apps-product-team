@@ -1,0 +1,7 @@
+Model,Input/Channel,DSP 1,DSP 2,DSP 3,DSP 4,DSP 5,DSP 6,DSP 7,DSP 8,DSP 9,DSP 10,DSP 11,DSP 12,DSP 13,Output/Channel
+"DM-NAX-CA14A
+(friendly name)",AoIP in 1L,Level,Mute,5x1 Matrix Mixer,Signal Detect,Tone,PEQ-10/FIR,Output Settings,Casting/Streaming,Steering,Volume,Delay,Mute,Identify,Internal Speaker
+,AoIP in 1R,Level,Mute,,,,,,,,,,,,
+,AoIP in 2L,Level,Mute,,,,,,,,,,,,
+,AoIP in 2R,Level,Mute,,,,,,,,,,,,
+,Signal Generator,,,,,,,,,,,,,,

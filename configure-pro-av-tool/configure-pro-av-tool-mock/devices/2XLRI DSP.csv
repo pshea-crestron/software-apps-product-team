@@ -1,0 +1,11 @@
+Model,Input/Channel,DSP 1,DSP 2,DSP 3,DSP 4,DSP 5,DSP 6,DSP 7,DSP 8,DSP 9,DSP 10,Output/Channel
+"DM-NAX-2XLRI
+(Friendly name)",Analog In 1,Mic/Line select,48V on/off,Gain,Level,Mute,PEQ-5,5 x 4 Matrix Mixer,Delay,Volume,Mute,Line Out 1
+,Analog In 2,Mic/Line select,48V on/off,Gain,Level,Mute,PEQ-5,,Delay,Volume,Mute,Line Out 2
+,AoIP In 1L,,,,Level,Mute,PEQ-5,,AoIP Out 1L,,,
+,AoIP In 1R,,,,Level,Mute,PEQ-5,,AoIP Out 1R,,,
+,Signal Generator,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,Graphical Window Required,,,,,,,,,,,

@@ -1,5 +1,6 @@
 # Configure Pro AV — Product Capabilities
-
+name: product-capabilities
+description: Core feature capabilities for the Configure Pro AV Tool 
 ---
 
 # Part 1: Product Brief

@@ -1,0 +1,15 @@
+Model,Input/Channel,DSP 3,DSP 4,DSP 5,DSP 8,DSP 9,DSP 10,Output/Channel
+"BTIO-100-1G
+(Friendly name)",Line In 1,Level,Mute,9 x 8 Matrix Mixer,Delay,Volume,Mute,Line Out L
+,Line in 2,Level,Mute,,Delay,Volume,Mute,Line Out R
+,Bluetooth in L,Level,Mute,,Delay,Volume,Mute,USB Out L
+,Bluetooth in R,Level,Mute,,Delay,Volume,Mute,USB Out R
+,AoIP in 1L,Level,Mute,,AoIP Out 1L,,,
+,AoIP in 1R,Level,Mute,,AoIP Out 1R,,,
+,AoIP in 2L,Level,Mute,,AoIP Out 2L,,,
+,AoIP in 2R,Level,Mute,,AoIP Out 2R,,,
+,Signal Generator,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+Graphical Window Required,,,,,,,,

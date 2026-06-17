@@ -1,0 +1,43 @@
+Input/Channel,DSP 1,DSP 2,DSP 3,DSP 4,DSP 5,DSP 6,DSP 7,DSP 8,DSP 9,DSP 10,DSP 11,DSP 12,DSP 13,DSP 14,DSP 15,Output/Channel
+Digital Toslink 1 in,Gain,Mute,"Routing Matrix
+34 x 16 ",Signal Detect,Tone Settings,Balance,Output Settings,Mono/Stereo,Grouping,Casting/Streaming,PEQ10,Volume,Delay,Mute,Chimes,Analog Line Out 1L
+Digital Toslink 2 in,Gain,Mute,,Signal Detect,Tone Settings,Balance,Output Settings,Mono/Stereo,Grouping,Casting/Streaming,PEQ10,Volume,Delay,Mute,Chimes,Analog Line Out 1R
+Digital S/PDIF 1 in,Gain,Mute,,Signal Detect,Tone Settings,Balance,Output Settings,Mono/Stereo,Grouping,Casting/Streaming,PEQ10,Volume,Delay,Mute,Chimes,Analog Line Out 2L
+Digital S/PDIF 2 in,Gain,Mute,,Signal Detect,Tone Settings,Balance,Output Settings,Mono/Stereo,Grouping,Casting/Streaming,PEQ10,Volume,Delay,Mute,Chimes,Analog Line Out 2R
+Analog in 1 (RCA 1L),Gain,Mute,,Signal Detect,Tone Settings,Balance,Output Settings,Mono/Stereo,Grouping,Casting/Streaming,PEQ10,Volume,Delay,Mute,Chimes,Analog Line Out 3L
+Analog in 2 (RCA 1R),Gain,Mute,,Signal Detect,Tone Settings,Balance,Output Settings,Mono/Stereo,Grouping,Casting/Streaming,PEQ10,Volume,Delay,Mute,Chimes,Analog Line Out 3R
+Analog in 3 (RCA 2L),Gain,Mute,,Signal Detect,Tone Settings,Balance,Output Settings,Mono/Stereo,Grouping,Casting/Streaming,PEQ10,Volume,Delay,Mute,Chimes,Analog Line Out 4L
+Analog in 4 (RCA 2R),Gain,Mute,,Signal Detect,Tone Settings,Balance,Output Settings,Mono/Stereo,Grouping,Casting/Streaming,PEQ10,Volume,Delay,Mute,Chimes,Analog Line Out 4R
+Analog in 5(RCA 3L),Gain,Mute,,,,,,,,,,,,,,MediaStream 1 Tx
+Analog in 6 (RCA 3R),Gain,Mute,,,,,,,,,,,,,,MediaStream 2 Tx
+Analog in 7 (RCA 4L),Gain,Mute,,,,,,,,,,,,,,MediaStream 3 Tx
+Analog in 8 (RCA 4R),Gain,Mute,,,,,,,,,,,,,,MediaStream 4 Tx
+AES67 in 1L,,,,,,,,,,,,,,,,MediaStream 5 Tx
+AES67 in 1R,,,,,,,,,,,,,,,,MediaStream 6 Tx
+AoIP in 1L,,,,,,,,,,,,,,,,MediaStream 7 Tx
+AoIP in 1R,,,,,,,,,,,,,,,,MediaStream 8 Tx
+AoIP in 2L,,,,,,,,,,,,,,,,Toslink 1 NAX Tx
+AoIP in 2R,,,,,,,,,,,,,,,,Toslink 2 NAX Tx
+AoIP in 3L,,,,,,,,,,,,,,,,S/PDIF 1 NAX Tx
+AoIP in 3R,,,,,,,,,,,,,,,,S/PDIF 2 NAX Tx
+AoIP in 4L,,,,,,,,,,,,,,,,RCA 1 NAX Tx
+AoIP in 4R,,,,,,,,,,,,,,,,RCA 2 NAX Tx
+AoIP in 5L,,,,,,,,,,,,,,,,RCA 3 NAX Tx
+AoIP in 5R,,,,,,,,,,,,,,,,RCA 4 NAX Tx
+AoIP in 6L,,,,,,,,,,,,,,,,
+AoIP in 6R,,,,,,,,,,,,,,,,
+AoIP in 7L,,,,,,,,,,,,,,,,
+AoIP in 7R,,,,,,,,,,,,,,,,
+AoIP in 8L,,,,,,,,,,,,,,,,
+AoIP in 8R,,,,,,,,,,,,,,,,
+SigGen,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,
