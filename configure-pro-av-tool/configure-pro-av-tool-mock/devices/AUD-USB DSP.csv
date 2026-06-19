@@ -1,0 +1,15 @@
+Model,Input/Channel,DSP 3,DSP 4,DSP 5,DSP 6,DSP 7,DSP 8,DSP 9,DSP 10,Output/Channel
+"DM-NAX-AUD-USB
+(Friendly name)",Line In 1,Level,Mute,9 x 4 Matrix Mixer,Tone Settings,PEQ-10,Delay,Volume,Mute,Line Out L
+,Line In 2,Level,Mute,,Tone Settings,PEQ-10,Delay,Volume,Mute,Line Out R
+,USB In L,Level,Mute,,Tone Settings,PEQ-10,Delay,Volume,Mute,USB Out L
+,USB In R,Level,Mute,,Tone Settings,PEQ-10,Delay,Volume,Mute,USB Out R
+,AoIP In 1L,,,,,,,,,AoIP Out 1L
+,AoIP In 1R,,,,,,,,,AoIP Out 1R
+,AoIP In 2L,,,,,,,,,AoIP Out 2L
+,AoIP In 2R,,,,,,,,,AoIP Out 2R
+,Signal Generator,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+Graphical Window Required,,,,,,,,,,

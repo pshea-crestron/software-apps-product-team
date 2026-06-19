@@ -1,0 +1,44 @@
+Model,Input/Channel,DSP 1,DSP 2,DSP 3,DSP 4,DSP 5,DSP 6,DSP 7,DSP 8,DSP 9,DSP 10,DSP 11,DSP 12,DSP 13,DSP 14,DSP 15,DSP 16,Output/Channel
+"DM-NAX-8ZSA
+(Friendly name)",Digital Toslink 1 in,Gain,Mute,"Routing Matrix
+34 x 16 ",Signal Detect,Tone Settings,Balance,Output Settings,Zone Config,Grouping,Speaker Config,Casting/Streaming,PEQ-10,Volume,Delay,Mute,Chimes,Zone 1L (Amp)
+,Digital Toslink 2 in,Gain,Mute,,Signal Detect,Tone Settings,Balance,Output Settings,Zone Config,Grouping,Speaker Config,Casting/Streaming,PEQ-10,Volume,Delay,Mute,Chimes,Zone 1R (Amp)
+,Digital S/PDIF 1 in,Gain,Mute,,Signal Detect,Tone Settings,Balance,Output Settings,Zone Config,Grouping,Speaker Config,Casting/Streaming,PEQ-10,Volume,Delay,Mute,Chimes,Zone 2L (Amp)
+,Digital S/PDIF 2 in,Gain,Mute,,Signal Detect,Tone Settings,Balance,Output Settings,Zone Config,Grouping,Speaker Config,Casting/Streaming,PEQ-10,Volume,Delay,Mute,Chimes,Zone 2R (Amp)
+,Analog in 1 (RCA 1L),Gain,Mute,,Signal Detect,Tone Settings,Balance,Output Settings,Zone Config,Grouping,Speaker Config,Casting/Streaming,PEQ-10,Volume,Delay,Mute,Chimes,Zone 3L (Amp)
+,Analog in 2 (RCA 1R),Gain,Mute,,Signal Detect,Tone Settings,Balance,Output Settings,Zone Config,Grouping,Speaker Config,Casting/Streaming,PEQ-10,Volume,Delay,Mute,Chimes,Zone 3R (Amp)
+,Analog in 3 (RCA 2L),Gain,Mute,,Signal Detect,Tone Settings,Balance,Output Settings,Zone Config,Grouping,Speaker Config,Casting/Streaming,PEQ-10,Volume,Delay,Mute,Chimes,Zone 4L (Amp)
+,Analog in 4 (RCA 2R),Gain,Mute,,Signal Detect,Tone Settings,Balance,Output Settings,Zone Config,Grouping,Speaker Config,Casting/Streaming,PEQ-10,Volume,Delay,Mute,Chimes,Zone 5L (Amp)
+,Analog in 5(RCA 3L),Gain,Mute,,Signal Detect,Tone Settings,Balance,Output Settings,Zone Config,Grouping,Speaker Config,Casting/Streaming,PEQ-10,Volume,Delay,Mute,Chimes,Zone 5R (Amp)
+,Analog in 6 (RCA 3R),Gain,Mute,,Signal Detect,Tone Settings,Balance,Output Settings,Zone Config,Grouping,Speaker Config,Casting/Streaming,PEQ-10,Volume,Delay,Mute,Chimes,Zone 6L (Amp)
+,Analog in 7 (RCA 4L),Gain,Mute,,Signal Detect,Tone Settings,Balance,Output Settings,Zone Config,Grouping,Speaker Config,Casting/Streaming,PEQ-10,Volume,Delay,Mute,Chimes,Zone 6R (Amp)
+,Analog in 8 (RCA 4R),Gain,Mute,,Signal Detect,Tone Settings,Balance,Output Settings,Zone Config,Grouping,Speaker Config,Casting/Streaming,PEQ-10,Volume,Delay,Mute,Chimes,Zone 7L (Amp)
+,AES67 in 1L,,,,Signal Detect,Tone Settings,Balance,Output Settings,Zone Config,Grouping,Speaker Config,Casting/Streaming,PEQ-10,Volume,Delay,Mute,Chimes,Zone 7R (Amp)
+,AES67 in 1R,,,,Signal Detect,Tone Settings,Balance,Output Settings,Zone Config,Grouping,Speaker Config,Casting/Streaming,PEQ-10,Volume,Delay,Mute,Chimes,Zone 8L (Amp)
+,AoIP in 1L,,,,Signal Detect,Tone Settings,Balance,Output Settings,Zone Config,Grouping,Speaker Config,Casting/Streaming,PEQ-10,Volume,Delay,Mute,Chimes,Zone 8R (Amp)
+,AoIP in 1R,,,,,,,,,,,,EQ Bypass,Volume,,,,Analog Line Out 1L
+,AoIP in 2L,,,,,,,,,,,,EQ Bypass,Volume,,,,Analog Line Out 1R
+,AoIP in 2R,,,,,,,,,,,,EQ Bypass,Volume,,,,Analog Line Out 2L
+,AoIP in 3L,,,,,,,,,,,,EQ Bypass,Volume,,,,Analog Line Out 2R
+,AoIP in 3R,,,,,,,,,,,,EQ Bypass,Volume,,,,Analog Line Out 3L
+,AoIP in 4L,,,,,,,,,,,,EQ Bypass,Volume,,,,Analog Line Out 3R
+,AoIP in 4R,,,,,,,,,,,,EQ Bypass,Volume,,,,Analog Line Out 4L
+,AoIP in 5L,,,,,,,,,,,,EQ Bypass,Volume,,,,Analog Line Out 4R
+,AoIP in 5R,,,,,,,,,,,,,,,,,MediaStream 1 Tx
+,AoIP in 6L,,,,,,,,,,,,,,,,,MediaStream 2 Tx
+,AoIP in 6R,,,,,,,,,,,,,,,,,MediaStream 3 Tx
+,AoIP in 7L,,,,,,,,,,,,,,,,,MediaStream 4 Tx
+,AoIP in 7R,,,,,,,,,,,,,,,,,MediaStream 5 Tx
+,AoIP in 8L,,,,,,,,,,,,,,,,,MediaStream 6 Tx
+,AoIP in 8R,,,,,,,,,,,,,,,,,MediaStream 7 Tx
+,Signal Generator,,,,,,,,,,,,,,,,,MediaStream 8 Tx
+,,,,,,,,,,,,,,,,,,Toslink 1 NAX Tx
+,,,,,,,,,,,,,,,,,,Toslink 2 NAX Tx
+,,,,,,,,,,,,,,,,,,S/PDIF 1 NAX Tx
+,,,,,,,,,,,,,,,,,,S/PDIF 2 NAX Tx
+,,,,,,,,,,,,,,,,,,RCA 1 NAX Tx
+,,,,,,,,,,,,,,,,,,RCA 2 NAX Tx
+,,,,,,,,,,,,,,,,,,RCA 3 NAX Tx
+,,,,,,,,,,,,,,,,,,RCA 4 NAX Tx
+,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,

@@ -7,7 +7,7 @@
 - **Homeowner / Resident** — Receives visitor notifications, communicates with visitors, grants access remotely
 - **Dealer / Installer** — Discovers, commissions, and configures door station hardware in Configure Pro
 
-**Story Map Structure:** Epics reflect capability areas. Stories are sequenced from table stakes (Release 1) through advanced differentiation (Release 2+).
+**Story Map Structure:** Epics reflect capability areas. Within each epic, stories are organized into NOW / NEXT / LATER swim lanes that match the Story Map Summary at the bottom of this document.
 
 **ID Scheme:** Jira issue keys are used as permanent identifiers (e.g., CHOME-113693). Epic keys are noted at the top of each section.
 
@@ -20,6 +20,10 @@
 
 ---
 
+### NEXT — Phase B
+
+---
+
 #### User Story CHOME-113614
 - **Summary:** Launch directly into the relevant call screen with live camera view on touch screens from a door station press
 
@@ -29,10 +33,10 @@
 - **so that** I can quickly assess the situation
 
 ##### Acceptance Criteria:
-- **Scenario:** Visitor presses the door station button (doorbell) 
+- **Scenario:** Visitor presses the door station button (doorbell)
 - **Given:** A Ubiquiti door station button is pressed
 - **and Given:** The homeowner is at a Crestron Home touch panel
-- **When:** 
+- **When:** The homeowner taps the notification on the touch panel
 - **Then:** The Crestron Home app launches and immediately displays the live camera view for the relevant door station
 
 ---
@@ -120,7 +124,11 @@
 ## Epic 2: Touch Panels — Notifications from Door Stations
 **Jira Epic:** [CHOME-116727](https://crestroneng.atlassian.net/browse/CHOME-116727)
 
-*Extending the in-home touch panel experience with richer notification handling, including multi-device coordination.*
+*Extending the in-home touch panel experience with richer notification handling, including geolocation-based suppression of mobile notifications when the homeowner is at home.*
+
+---
+
+### LATER
 
 ---
 
@@ -144,6 +152,10 @@
 **Jira Epic:** [CHOME-113671](https://crestroneng.atlassian.net/browse/CHOME-113671)
 
 *Dealers and installers can discover, commission, and configure Ubiquiti door station hardware in Configure Pro. Targeted first-release hardware: UVC-G6-Pro-Entry, UCG-Max, UA-Hub-Door-Mini.*
+
+---
+
+### NEXT — Phase B
 
 ---
 
@@ -298,6 +310,10 @@
 
 ---
 
+### NOW — Phase A
+
+---
+
 #### User Story CHOME-114756
 - **Summary:** Discover and add 2N door station devices in Configure Pro
 
@@ -446,6 +462,10 @@
 **Jira Epic:** [CHOME-113680](https://crestroneng.atlassian.net/browse/CHOME-113680)
 
 *Homeowners and residents receive push notifications on iOS and Android when a doorbell is pressed or motion is detected. From the notification, users can preview live video, talk to visitors, and trigger quick actions — all from the Crestron Home app.*
+
+---
+
+### NOW — Phase A
 
 ---
 
@@ -609,6 +629,10 @@
 
 ---
 
+### NEXT — Phase B
+
+---
+
 #### User Story CHOME-113709
 - **Summary:** Actuate gates, garage doors, or entry motors using door station controls
 
@@ -678,7 +702,7 @@
 
 ##### Use Case:
 - **As a** homeowner/resident
-- **I want to** create temporary PIN codes for locks controlled by Crestron, Ubiquiti I/O, or relays
+- **I want to** create temporary PIN codes for locks controlled by Crestron, door station I/O, or relays
 - **so that** I can grant secure, time-limited access to guests or delivery personnel
 
 ##### Acceptance Criteria:
@@ -728,6 +752,10 @@
 
 ---
 
+### NOW — Phase A
+
+---
+
 #### User Story CHOME-114324
 - **Summary:** Receive a phone call on mobile when the door station button is pressed
 
@@ -760,19 +788,7 @@
 
 ---
 
-#### User Story CHOME-116068
-- **Summary:** An owner selects who will get phone calls from the door station(s)
-
-##### Use Case:
-- **As a** homeowner/resident
-- **I want to** configure which users receive phone calls from the door station
-- **so that** the right household members are alerted based on their preferences
-
-##### Acceptance Criteria:
-- **Scenario:** Homeowner configures phone call recipients for a door station
-- **Given:** The homeowner has access to the User section of the Crestron Home end-user app
-- **When:** The homeowner configures phone call recipients for a door station event
-- **Then:** Selected users receive phone calls for the configured events; unselected users receive push notifications only or none
+### NEXT — Phase B
 
 ---
 
@@ -792,12 +808,36 @@
 
 ---
 
+### LATER
+
+---
+
+#### User Story CHOME-116068
+- **Summary:** An owner selects who will get phone calls from the door station(s)
+
+##### Use Case:
+- **As a** homeowner/resident
+- **I want to** configure which users receive phone calls from the door station
+- **so that** the right household members are alerted based on their preferences
+
+##### Acceptance Criteria:
+- **Scenario:** Homeowner configures phone call recipients for a door station
+- **Given:** The homeowner has access to the User section of the Crestron Home end-user app
+- **When:** The homeowner configures phone call recipients for a door station event
+- **Then:** Selected users receive phone calls for the configured events; unselected users receive push notifications only or none
+
+---
+
 ## Epic 7: Platform Support — Push Notifications
 **Jira Epic:** [CHOME-116008](https://crestroneng.atlassian.net/browse/CHOME-116008)
 
 *Platform-level engineering work required to deliver reliable push notification delivery for door station events across iOS, Android, and Crestron Home touch panels.*
 
-*Note: This epic currently contains platform engineering tasks rather than user stories. User-facing outcomes are captured in Epics 2 and 5. Refer to [CHOME-116008](https://crestroneng.atlassian.net/browse/CHOME-116008) in Jira for task-level detail.*
+---
+
+### NOW — Phase A
+
+*This epic currently contains platform engineering tasks rather than user stories. User-facing outcomes are captured in Epics 2 and 5. Refer to [CHOME-116008](https://crestroneng.atlassian.net/browse/CHOME-116008) in Jira for task-level detail.*
 
 ---
 
