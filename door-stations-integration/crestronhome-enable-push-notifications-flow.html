@@ -108,6 +108,19 @@
   }
   .tap:active { opacity: 0.6; transform: scale(0.98); }
 
+  .new-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
   /* ── Screen 1: My Systems ─────────────────────── */
   .s1-header {
     padding: 8px 20px 18px;
@@ -194,13 +207,15 @@
     transform: translateX(-50%);
     background: var(--card);
     border-radius: 999px;
-    padding: 16px 56px;
+    min-width: 280px;
+    text-align: center;
+    padding: 16px 16px;
     box-shadow: var(--shadow);
     font-weight: 700;
     font-size: 18px;
   }
 
-  /* ── Screen 2: Home (Chase House) ─────────────── */
+  /* ── Screen 2: Home (My Home) ─────────────── */
   .home-hero {
     position: relative;
     height: 380px;
@@ -738,7 +753,7 @@
               </svg>
             </span>
           </div>
-          <div class="system-name">Chase House</div>
+          <div class="system-name">My Home</div>
           <div class="system-sub">This home is connected and ready.</div>
         </div>
         <div class="system-more">•••</div>
@@ -767,11 +782,11 @@
         <div class="system-more">•••</div>
       </div>
 
-      <div class="org-pill">Crestron Demo</div>
+      <div class="org-pill">Mock Door Stations Settings</div>
     </div>
   </div>
 
-  <!-- ─── SCREEN 2: Chase House Home ─── -->
+  <!-- ─── SCREEN 2: My Home Home ─── -->
   <div class="screen" id="screen-2">
     <div class="screen-body" style="padding-top: 0;">
       <div class="home-hero">
@@ -781,7 +796,7 @@
           </svg>
         </div>
         <div class="home-title-block">
-          <div class="home-title">Chase House</div>
+          <div class="home-title">My Home</div>
           <div class="home-sub">All doors are locked.</div>
         </div>
       </div>
@@ -828,7 +843,7 @@
           </svg>
         </div>
         <div class="home-title-block" style="opacity: 0.3;">
-          <div class="home-title">Chase House</div>
+          <div class="home-title">My Home</div>
           <div class="home-sub">All doors are locked.</div>
         </div>
       </div>
@@ -893,7 +908,7 @@
     <div class="screen-body" style="padding-top: 54px; overflow-y: auto;">
       <div class="sheet-grabber"></div>
       <div class="manage-title">Manage</div>
-      <div class="manage-sub">Chase House</div>
+      <div class="manage-sub">My Home</div>
 
       <div class="group-label">SETTINGS</div>
       <div class="list-group">
@@ -906,6 +921,16 @@
             </svg>
           </span>
           <span>Users</span>
+          <span class="chev">›</span>
+        </div>
+        <div class="service-row push-row tap" onclick="go(7)">
+          <span class="row-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 16v-5a6 6 0 0 0-12 0v5l-2 2v1h16v-1l-2-2z"/>
+              <path d="M10 21a2 2 0 0 0 4 0"/>
+            </svg>
+          </span>
+          <span>Notifications <span class="new-badge">NEW</span></span>
           <span class="chev">›</span>
         </div>
         <div class="list-row">
@@ -1011,7 +1036,7 @@
             <polyline points="15 18 9 12 15 6"/>
           </svg>
         </div>
-        <div class="sheet-title">Chase House</div>
+        <div class="sheet-title">My Home</div>
         <div class="sheet-subtitle">USERS</div>
       </div>
 
@@ -1122,7 +1147,7 @@
               <path d="M10 21a2 2 0 0 0 4 0"/>
             </svg>
           </span>
-          <span>Push Notifications</span>
+          <span>Notifications<span class="new-badge">NEW</span></span>
           <span class="chev">›</span>
         </div>
       </div>
@@ -1134,7 +1159,7 @@
     <div class="screen-body" style="padding-top: 54px; overflow-y: auto;">
       <div class="sheet-grabber"></div>
       <div class="sheet-header">
-        <div class="sheet-back tap" onclick="go(6)">
+        <div class="sheet-back tap" onclick="goBack()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="15 18 9 12 15 6"/>
           </svg>
@@ -1155,7 +1180,7 @@
       </div>
 
       <div class="pn-help" id="pn-help">
-        You'll receive push notifications from <b>Chase House</b> on this device. Tap the toggle to turn them off.
+        You'll receive push notifications from <b>My Home</b> on this device. Tap the toggle to turn them off.
       </div>
 
       <div class="enabled-only" id="enabled-section">
@@ -1222,12 +1247,37 @@
 <button class="reset-fab" onclick="go(1)">↺ Restart flow</button>
 
 <script>
+  // History stack — records where the user came from before each navigation.
+  // Only consulted by goBack(); regular go(n) navigation ignores it.
+  const history = [];
+  let currentScreen = 1;
+
   function go(n) {
+    history.push(currentScreen);     // remember where we were before leaving
+    currentScreen = n;
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById('screen-' + n).classList.add('active');
     // Reset scroll on screens that scroll
     const body = document.querySelector('#screen-' + n + ' .screen-body');
     if (body) body.scrollTop = 0;
+  }
+
+  function goBack() {
+    if (history.length === 0) return;  // safety — nothing to go back to
+    const previous = history.pop();
+    currentScreen = previous;
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + previous).classList.add('active');
+    const body = document.querySelector('#screen-' + previous + ' .screen-body');
+    if (body) body.scrollTop = 0;
+  }
+
+  // Restart clears history too
+  function restart() {
+    history.length = 0;
+    currentScreen = 1;
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-1').classList.add('active');
   }
 
   let pnEnabled = true;
@@ -1242,13 +1292,13 @@
       sw.classList.remove('off');
       dot.classList.remove('off');
       text.textContent = 'Enabled';
-      help.innerHTML = "You'll receive push notifications from <b>Chase House</b> on this device. Tap the toggle to turn them off.";
+      help.innerHTML = "You'll receive push notifications from <b>My Home</b> on this device. Tap the toggle to turn them off.";
       enabledSection.classList.remove('hidden');
     } else {
       sw.classList.add('off');
       dot.classList.add('off');
       text.textContent = 'Disabled';
-      help.innerHTML = "Push notifications are off for this device. You won't be alerted when something happens at <b>Chase House</b>.";
+      help.innerHTML = "Push notifications are off for this device. You won't be alerted when something happens at <b>My Home</b>.";
       enabledSection.classList.add('hidden');
     }
   }
