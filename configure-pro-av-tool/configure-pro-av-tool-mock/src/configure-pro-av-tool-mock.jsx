@@ -341,13 +341,55 @@ function MainApp({ onNav }) {
 
   const toggleFloor = (id) => setExpanded(p => ({ ...p, [id]: !p[id] }));
 
+  // Icon components — pass color to match active/inactive state
+  const NavIcons = {
+    rooms: (c) => (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path d="M3 10.5L12 3l9 7.5V21a1 1 0 01-1 1H4a1 1 0 01-1-1V10.5z" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M9 22V12h6v10" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+    devices: (c) => (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <rect x="2" y="3" width="20" height="14" rx="2" stroke={c} strokeWidth="2"/>
+        <path d="M8 21h8M12 17v4" stroke={c} strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+    ),
+    routing: (c) => (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <circle cx="5" cy="6" r="2" stroke={c} strokeWidth="2"/>
+        <circle cx="5" cy="18" r="2" stroke={c} strokeWidth="2"/>
+        <circle cx="19" cy="12" r="2" stroke={c} strokeWidth="2"/>
+        <path d="M7 6h4a4 4 0 014 4v2M7 18h4a4 4 0 004-4v-2" stroke={c} strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+    ),
+    scenes: (c) => (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2l2.09 6.26L20.18 9l-5.09 3.74L17.18 19 12 15.27 6.82 19l2.09-6.26L3.82 9l6.09-.74L12 2z" stroke={c} strokeWidth="2" strokeLinejoin="round"/>
+      </svg>
+    ),
+    actions: (c) => (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+    schedules: (c) => (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <rect x="3" y="4" width="18" height="18" rx="2" stroke={c} strokeWidth="2"/>
+        <path d="M16 2v4M8 2v4M3 10h18" stroke={c} strokeWidth="2" strokeLinecap="round"/>
+        <rect x="7" y="14" width="4" height="4" rx="0.5" fill={c}/>
+      </svg>
+    ),
+  };
+
+  // Drop the icon field from navItems — the id is the lookup key
   const navItems = [
-    { id: "rooms", label: "Rooms", icon: "🏠" },
-    { id: "devices", label: "Devices", icon: "📟" },
-    { id: "routing", label: "Routing", icon: "🔀" },
-    { id: "scenes", label: "Scenes", icon: "⭐" },
-    { id: "actions", label: "Actions", icon: "⚡" },
-    { id: "schedules", label: "Schedules", icon: "📅" },
+    { id: "rooms", label: "Rooms" },
+    { id: "devices", label: "Devices" },
+    { id: "routing", label: "Routing" },
+    { id: "scenes", label: "Scenes" },
+    { id: "actions", label: "Actions" },
+    { id: "schedules", label: "Schedules" },
   ];
 
   return (
@@ -364,11 +406,13 @@ function MainApp({ onNav }) {
           {navItems.map(item => {
             const active = tab === item.id;
             const clickable = ["rooms", "devices", "routing"].includes(item.id);
+            const iconColor = active ? "#0073CF" : "#8e8e93";
             return (
               <button key={item.id} onClick={() => clickable && setTab(item.id)}
                 style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "7px 14px", background: active ? "rgba(0,115,207,0.06)" : "none", border: "none",
                   borderLeft: active ? "2.5px solid #0073CF" : "2.5px solid transparent", cursor: clickable ? "pointer" : "default", color: active ? "#0073CF" : "#1c1c1e", opacity: clickable ? 1 : 0.35, fontSize: 13, fontWeight: active ? 600 : 400 }}>
-                <span style={{ fontSize: 15 }}>{item.icon}</span> {item.label}
+                {NavIcons[item.id]?.(iconColor)}
+                {item.label}
               </button>
             );
           })}
