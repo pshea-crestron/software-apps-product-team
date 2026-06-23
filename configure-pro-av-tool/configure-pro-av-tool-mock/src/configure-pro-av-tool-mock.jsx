@@ -344,23 +344,25 @@ function MainApp({ onNav }) {
   // Icon components — pass color to match active/inactive state
   const NavIcons = {
     rooms: (c) => (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-        <path d="M3 10.5L12 3l9 7.5V21a1 1 0 01-1 1H4a1 1 0 01-1-1V10.5z" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M9 22V12h6v10" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
+     <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_34497_17754)">
+<path d="M13 22.1037H21M3 22.1037H5.5M5.5 22.1037L13 23.1318V1.54199L5.5 4.1122V22.1037ZM18.5 22.1037V4.1122H13M10.5 12.3369V15.4211" stroke="black" stroke-width="2" stroke-linecap="round"/>
+</g>
+<defs>
+<clipPath id="clip0_34497_17754">
+<rect width="24" height="24.674" fill="white"/>
+</clipPath>
+</defs>
+</svg>
     ),
     devices: (c) => (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-        <rect x="2" y="3" width="20" height="14" rx="2" stroke={c} strokeWidth="2"/>
-        <path d="M8 21h8M12 17v4" stroke={c} strokeWidth="2" strokeLinecap="round"/>
-      </svg>
+      <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M16.2429 4.89071C18.586 7.29966 18.586 11.2053 16.2429 13.6143M7.75758 13.6143C5.41444 11.2053 5.41443 7.29966 7.75758 4.89071M4.85853 16.4491C1.02383 12.4287 1.0473 5.97356 4.92893 1.98291M19.0715 1.98291C22.9531 5.97356 22.9766 12.4287 19.1419 16.4491M12.0002 16.4491V9.25254M5.00022 22.6176H19.0002C19.9321 22.6176 20.398 22.6176 20.7656 22.4611C21.2556 22.2524 21.645 21.8521 21.848 21.3483C22.0002 20.9705 22.0002 20.4914 22.0002 19.5334C22.0002 18.5753 22.0002 18.0963 21.848 17.7184C21.645 17.2146 21.2556 16.8143 20.7656 16.6056C20.398 16.4491 19.9321 16.4491 19.0002 16.4491H5.00022C4.06834 16.4491 3.6024 16.4491 3.23485 16.6056C2.7448 16.8143 2.35545 17.2146 2.15246 17.7184C2.00022 18.0963 2.00022 18.5753 2.00022 19.5334C2.00022 20.4914 2.00022 20.9705 2.15246 21.3483C2.35545 21.8521 2.7448 22.2524 3.23485 22.4611C3.6024 22.6176 4.06834 22.6176 5.00022 22.6176Z" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
     ),
     routing: (c) => (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-        <circle cx="5" cy="6" r="2" stroke={c} strokeWidth="2"/>
-        <circle cx="5" cy="18" r="2" stroke={c} strokeWidth="2"/>
-        <circle cx="19" cy="12" r="2" stroke={c} strokeWidth="2"/>
-        <path d="M7 6h4a4 4 0 014 4v2M7 18h4a4 4 0 004-4v-2" stroke={c} strokeWidth="2" strokeLinecap="round"/>
+      <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M11.5 5.14041H11.9344C14.9816 5.14041 16.5053 5.14041 17.0836 5.70306C17.5836 6.18943 17.8051 6.90592 17.6702 7.5998C17.514 8.40253 16.2701 9.30708 13.7823 11.1162L9.71772 14.0719C7.2299 15.8809 5.98599 16.7855 5.82984 17.5882C5.69486 18.2821 5.91642 18.9986 6.41636 19.485C6.99474 20.0476 8.51836 20.0476 11.5656 20.0476H12.5M8 5.14041C8 6.84379 6.65685 8.22466 5 8.22466C3.34315 8.22466 2 6.84379 2 5.14041C2 3.43702 3.34315 2.05615 5 2.05615C6.65685 2.05615 8 3.43702 8 5.14041ZM22 19.5336C22 21.237 20.6569 22.6178 19 22.6178C17.3431 22.6178 16 21.237 16 19.5336C16 17.8302 17.3431 16.4493 19 16.4493C20.6569 16.4493 22 17.8302 22 19.5336Z" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     ),
     scenes: (c) => (
