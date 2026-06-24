@@ -211,10 +211,17 @@ const CARD_W = 240;
 const PORT_H = 26;
 const HEADER_H = 48; // box-sizing: border-box — includes padding + border
 const CARD_PAD = 8;
+const DSP_FOOTER_H = 56; // inline gain/mute controls strip
 
-function cardHeight(dev) {
+// Devices that expose inline DSP controls (gain/mute)
+function isDspCapable(dev) {
+  return dev.type === "DSP" || dev.type === "Amplifier" || dev.type === "AV Receiver";
+}
+
+function cardHeight(dev, showDsp = false) {
   const n = Math.max(dev.inputs.length, dev.outputs.length, 1);
-  return HEADER_H + n * PORT_H + CARD_PAD * 2;
+  const base = HEADER_H + n * PORT_H + CARD_PAD * 2;
+  return base + (showDsp && isDspCapable(dev) ? DSP_FOOTER_H : 0);
 }
 
 function portY(dev, portId, side) {
@@ -323,6 +330,15 @@ function MainApp({ onNav }) {
   const [routes, setRoutes] = useState(INITIAL_ROUTES);
   const [positions, setPositions] = useState(buildDevicePositions);
   const [routingView, setRoutingView] = useState("canvas"); // "canvas" | "grid"
+  // Per-device DSP state: { [devId]: { gain: number(dB), mute: boolean } }
+  const [deviceDsp, setDeviceDsp] = useState({});
+
+  const setDeviceGain = useCallback((devId, gain) => {
+    setDeviceDsp(prev => ({ ...prev, [devId]: { ...(prev[devId] || { gain: 0, mute: false }), gain } }));
+  }, []);
+  const toggleDeviceMute = useCallback((devId) => {
+    setDeviceDsp(prev => { const cur = prev[devId] || { gain: 0, mute: false }; return { ...prev, [devId]: { ...cur, mute: !cur.mute } }; });
+  }, []);
 
   const addRoute = useCallback((fromDev, fromPort, toDev, toPort, sigType) => {
     setRoutes(prev => {
@@ -444,7 +460,7 @@ function MainApp({ onNav }) {
           sel.type === "device" ? (
             <DeviceRoutingPanel device={deviceById(sel.id)} routes={routes} addRoute={addRoute} removeRouteByTarget={removeRouteByTarget} />
           ) : routingView === "canvas" ? (
-            <RoutingCanvas sel={sel} routes={routes} addRoute={addRoute} removeRoute={removeRoute} positions={positions} setPositions={setPositions} setSel={setSel} />
+            <RoutingCanvas sel={sel} routes={routes} addRoute={addRoute} removeRoute={removeRoute} positions={positions} setPositions={setPositions} setSel={setSel} deviceDsp={deviceDsp} setDeviceGain={setDeviceGain} toggleDeviceMute={toggleDeviceMute} />
           ) : (
             <RoutingGrid sel={sel} routes={routes} addRoute={addRoute} removeRouteByTarget={removeRouteByTarget} />
           )
@@ -576,7 +592,7 @@ function TreePanel({ tab, sel, setSel, expanded, toggleFloor, routes }) {
 // ROUTING CANVAS
 // ═══════════════════════════════════════════════════════════════════
 
-function RoutingCanvas({ sel, routes, addRoute, removeRoute, positions, setPositions, setSel }) {
+function RoutingCanvas({ sel, routes, addRoute, removeRoute, positions, setPositions, setSel, deviceDsp, setDeviceGain, toggleDeviceMute }) {
   const containerRef = useRef(null);
   const [vp, setVp] = useState({ x: 0, y: 0, z: 0.45 });
   const [dragging, setDragging] = useState(null);
@@ -594,6 +610,15 @@ function RoutingCanvas({ sel, routes, addRoute, removeRoute, positions, setPosit
   }, []);
 
   // Signal-flow-aware tracing: walk the chain, compute where signal actually flows
+  // A device blocks signal if it's out of order, muted, or at min gain
+  const isBlocking = useCallback((devId) => {
+    if (outOfOrder.has(devId)) return true;
+    const dsp = deviceDsp[devId];
+    if (dsp?.mute) return true;
+    if (dsp && typeof dsp.gain === "number" && dsp.gain <= -80) return true; // -80dB = effectively muted
+    return false;
+  }, [outOfOrder, deviceDsp]);
+
   const buildTrace = useCallback((startRouteIds) => {
     // Step 1: find all connected routes in the chain
     const allRouteIds = new Set();
@@ -612,7 +637,7 @@ function RoutingCanvas({ sel, routes, addRoute, removeRoute, positions, setPosit
     }
 
     // Step 2: propagate signal flow through the chain
-    // A device outputs signal if: it's NOT out of order, AND (it's a source OR has signal on at least one chain input)
+    // A device outputs signal if: it's NOT blocking, AND (it's a source OR has signal on at least one chain input)
     const chainRoutes = routes.filter(r => allRouteIds.has(r.id));
     const deviceHasSignalOut = new Set(); // devices that are outputting signal
     const signalRouteIds = new Set(); // routes carrying signal
@@ -624,7 +649,7 @@ function RoutingCanvas({ sel, routes, addRoute, removeRoute, positions, setPosit
 
     // Initialize sources
     sourceDevs.forEach(d => {
-      if (!outOfOrder.has(d)) deviceHasSignalOut.add(d);
+      if (!isBlocking(d)) deviceHasSignalOut.add(d);
     });
 
     // Iterative propagation (handles chains of any length)
@@ -639,7 +664,7 @@ function RoutingCanvas({ sel, routes, addRoute, removeRoute, positions, setPosit
           signalRouteIds.add(r.id);
           changed = true;
           // Does the destination device now have signal and can output?
-          if (!outOfOrder.has(r.toDevice) && !deviceHasSignalOut.has(r.toDevice)) {
+          if (!isBlocking(r.toDevice) && !deviceHasSignalOut.has(r.toDevice)) {
             deviceHasSignalOut.add(r.toDevice);
             changed = true;
           }
@@ -655,7 +680,7 @@ function RoutingCanvas({ sel, routes, addRoute, removeRoute, positions, setPosit
     });
 
     setTracedChain({ routeIds: allRouteIds, deviceIds: allDeviceIds, signalRouteIds, noSignalPorts });
-  }, [routes, outOfOrder]);
+  }, [routes, isBlocking]);
 
   const traceFromRoute = useCallback((routeId) => buildTrace([routeId]), [buildTrace]);
   const traceFromDevice = useCallback((devId) => {
@@ -667,12 +692,12 @@ function RoutingCanvas({ sel, routes, addRoute, removeRoute, positions, setPosit
     buildTrace(devRoutes.map(r => r.id));
   }, [routes, buildTrace]);
 
-  // Re-run trace when outOfOrder changes (if currently tracing)
+  // Re-run trace when blocking state changes (out of order, mute, gain)
   useEffect(() => {
     if (!tracedChain) return;
     const rids = [...tracedChain.routeIds];
     if (rids.length > 0) buildTrace(rids);
-  }, [outOfOrder]);
+  }, [outOfOrder, deviceDsp]);
 
   const visibleDevices = useMemo(() => {
     if (sel.type === "system") return DEVICES;
@@ -925,16 +950,19 @@ function RoutingCanvas({ sel, routes, addRoute, removeRoute, positions, setPosit
         {/* Device cards */}
         {allDevices.map(dev => {
           const pos = positions[dev.id] || { x: 0, y: 0 };
-          const h = cardHeight(dev);
-          const hasPorts = dev.inputs.length > 0 || dev.outputs.length > 0;
           const isSelected = selectedDev === dev.id;
+          const showDsp = isSelected && isDspCapable(dev);
+          const h = cardHeight(dev, showDsp);
+          const hasPorts = dev.inputs.length > 0 || dev.outputs.length > 0;
           const dim = !visibleIds.has(dev.id);
           const isTracing = !!tracedChain;
           const isTracedDev = tracedChain?.deviceIds?.has(dev.id);
           const traceOpacity = isTracing ? (isTracedDev ? 1 : 0.15) : 1;
           const finalOpacity = dim ? 0.3 : traceOpacity;
           const isOOO = outOfOrder.has(dev.id);
-          const borderColor = isOOO ? "#ff3b30" : isSelected ? "#0073CF" : isTracedDev ? "#0073CF66" : "#d1d1d6";
+          const dsp = deviceDsp[dev.id] || { gain: 0, mute: false };
+          const isMuted = dsp.mute;
+          const borderColor = isOOO ? "#ff3b30" : isMuted ? "#f59e0b" : isSelected ? "#0073CF" : isTracedDev ? "#0073CF66" : "#d1d1d6";
           return (
             <div key={dev.id} style={{ position: "absolute", left: pos.x, top: pos.y, width: CARD_W, height: h, background: isOOO ? "#fff5f5" : "#fff", borderRadius: 10, border: `${isSelected || isOOO ? 2 : 1}px solid ${borderColor}`,
               boxShadow: isTracedDev ? "0 0 12px rgba(0,115,207,0.15)" : "0 1px 3px rgba(0,0,0,0.06)", cursor: "grab", userSelect: "none", opacity: finalOpacity, zIndex: isSelected ? 20 : isTracedDev ? 15 : 10, transition: "opacity 0.25s, box-shadow 0.25s" }}
@@ -948,7 +976,7 @@ function RoutingCanvas({ sel, routes, addRoute, removeRoute, positions, setPosit
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: "#1c1c1e", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{dev.name}</div>
-                  <div style={{ fontSize: 9, color: isOOO ? "#ff3b30" : "#8e8e93", fontWeight: isOOO ? 600 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{isOOO ? "OUT OF ORDER" : dev.model}</div>
+                  <div style={{ fontSize: 9, color: isOOO ? "#ff3b30" : isMuted ? "#f59e0b" : "#8e8e93", fontWeight: (isOOO || isMuted) ? 600 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{isOOO ? "OUT OF ORDER" : isMuted ? "MUTED" : dev.model}</div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
                   {(() => {
@@ -1005,6 +1033,31 @@ function RoutingCanvas({ sel, routes, addRoute, removeRoute, positions, setPosit
                     </div>
                     );
                   })}
+                </div>
+              )}
+              {/* Inline DSP controls (A-16) — gain slider + mute, shown when selected DSP-capable device */}
+              {showDsp && (
+                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: DSP_FOOTER_H, boxSizing: "border-box", padding: "6px 10px", borderTop: "1px solid #e5e5ea", background: "#fafafa", borderRadius: "0 0 10px 10px" }}
+                  onPointerDown={(e) => e.stopPropagation()}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 9, fontWeight: 700, color: "#8e8e93", width: 28 }}>GAIN</span>
+                    <input type="range" min={-80} max={12} step={1} value={dsp.gain}
+                      onChange={(e) => setDeviceGain(dev.id, parseInt(e.target.value))}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ flex: 1, accentColor: isMuted ? "#c7c7cc" : "#0073CF", cursor: "pointer" }} />
+                    <span style={{ fontSize: 9, fontWeight: 600, color: isMuted ? "#c7c7cc" : "#1c1c1e", width: 34, textAlign: "right" }}>{dsp.gain > 0 ? "+" : ""}{dsp.gain} dB</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
+                    <button onClick={(e) => { e.stopPropagation(); toggleDeviceMute(dev.id); }}
+                      style={{ flex: 1, padding: "4px 0", borderRadius: 6, border: `1px solid ${isMuted ? "#f59e0b" : "#d1d1d6"}`, background: isMuted ? "#f59e0b" : "#fff", color: isMuted ? "#fff" : "#555", fontSize: 10, fontWeight: 600, cursor: "pointer" }}>
+                      {isMuted ? "🔇 Muted" : "🔊 Mute"}
+                    </button>
+                    {/* Mini signal meter reflecting gain level */}
+                    <div style={{ flex: 1, height: 8, borderRadius: 4, background: "#e5e5ea", overflow: "hidden", position: "relative" }}>
+                      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${isMuted ? 0 : Math.max(0, Math.min(100, ((dsp.gain + 80) / 92) * 100))}%`,
+                        background: isMuted ? "#c7c7cc" : "linear-gradient(90deg,#34c759,#f59e0b)", transition: "width 0.15s" }} />
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

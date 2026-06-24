@@ -1,0 +1,75 @@
+@startuml 2NAuthenticationFlow
+title "2N MV SDK: Partner Integration Flow"
+ 
+participant "Configure Pro?\nCompany" as PartnerAdmin
+participant "Crestron Home Platform" as PartnerBackend
+participant "2N API" as API
+participant my2N
+participant User
+participant "Crestron Mobile App" as PartnerApp
+participant "2N MV MSDK" as SDK 
+participant "2N Intercom" as Intercom
+ 
+== 1. One-time Configure Pro setup: Intercom ==
+note over PartnerAdmin: Detect 2N Intercoms
+ 
+PartnerAdmin->API: POST Create Device (Intercom)\n(Site ID, serial number)
+API-->PartnerAdmin: Device ID (Intercom)
+ 
+note over my2N: Intercom registered in site
+ 
+== 2. Provisioning: Shadow User + Device (App) ==
+
+PartnerAdmin->PartnerBackend: Settings\n (enable push notifications for intercom doorbell)
+
+note over PartnerBackend: New user wants 2N calling for door station
+ 
+PartnerBackend->API: POST Create Shadow User + Device (App)\n(Site ID)
+API-->PartnerBackend: {Shadow User ID, Device ID (App)}
+ 
+note over PartnerBackend: Store mapping:\nPartner User ↔ Shadow User ID
+ 
+note over my2N: Shadow User created\nDevice (App) created\nShadow User assigned to Device (App)
+ 
+== 3a. Runtime: Login ==
+ 
+User->PartnerApp: Opens app, logs in\nPartner credentials
+
+
+
+== 3. Runtime: Login ==
+ 
+User->PartnerApp: Opens app, logs in\nPartner credentials
+PartnerApp->PartnerBackend: Authenticate
+PartnerBackend-->PartnerApp: Auth OK
+ 
+PartnerBackend->API: GET Access Token\n(Shadow User ID)
+API-->PartnerBackend: Access Token (valid for X hours)
+ 
+PartnerBackend-->PartnerApp: 2N Access Token
+ 
+PartnerApp->SDK: login(accessToken)
+SDK-->PartnerApp: Login OK, SDK ready
+ 
+== 4. Calling ==
+ 
+User->PartnerApp: Taps Push Notification
+PartnerApp->SDK: call(deviceId)
+SDK->Intercom: Initiate call
+Intercom-->SDK: Call connected
+SDK-->PartnerApp: Call connected callback
+
+note over PartnerApp: Audio & Video \nstreams established
+
+== 5. Token Refresh ==
+ 
+note over SDK: Token expired / nearing expiration
+ 
+SDK-->PartnerApp: Token expired callback
+PartnerApp->PartnerBackend: Request new 2N token
+PartnerBackend->API: GET Access Token\n(Shadow User ID)
+API-->PartnerBackend: New Access Token
+PartnerBackend-->PartnerApp: New Access Token
+ 
+PartnerApp->SDK: refreshToken(newAccessToken)
+SDK-->PartnerApp: Token refreshed, SDK ready

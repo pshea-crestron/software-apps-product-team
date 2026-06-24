@@ -1,23 +1,23 @@
-Model,Input/Channel,DSP 1,DSP 2,DSP 3,DSP 4,DSP 5,DSP 6,DSP 7,DSP 8,DSP 9,DSP 10,DSP 11,DSP 12,DSP 13,DSP 14,DSP 15,DSP 16,Output/Channel
+Model           , Input/Channel       , DSP 1, DSP 2, DSP 3             , DSP 4        , DSP 5        , DSP 6  , DSP 7          , DSP 8      , DSP 9   , DSP 10        , DSP 11           , DSP 12    , DSP 13, DSP 14, DSP 15, DSP 16, Output/Channel
 "DM-NAX-1ZSA
-(friendly name)",Analog in 1 (RCA 1L),Gain,Mute,8x2 Routing Matrix,Signal Detect,Tone Settings,Balance,Output Settings,Mono/Stereo,Grouping,Speaker Config,Casting/Streaming,PEQ-10/FIR,Volume,Delay,Mute,Chimes,Zone 1L (Amp)
-,Analog in 2 (RCA 1R),Gain,Mute,,Signal Detect,Tone Settings,Balance,Output Settings,Mono/Stereo,Grouping,Speaker Config,Casting/Streaming,PEQ-10/FIR,Volume,Delay,Mute,Chimes,Zone 1R (Amp)
-,Digital Toslink in,Gain,Mute,,,,,Output Settings,,,,,PEQ-10/FIR,,,,,Analog Line Out 1L
-,Digital S/PDIF in,Gain,Mute,,,,,Output Settings,,,,,PEQ-10/FIR,,,,,Analog Line Out 1R
-,eARC,Gain,Mute,,,,,Output Settings,,,,,EQ-LPF,,,,,Analog Line Out 2 (sub)
-,Bluetooth,Gain,Mute,,,,,,,,,,,,,,,MediaStream 1 Tx
-,AES67 in 1L,Gain,Mute,,,,,,,,,,,,,,,MediaStream 2 Tx
-,AES67 in 1R,Gain,Mute,,,,,,,,,,,,,,,Toslink 1 NAX Tx
-,,,,,,,,,,,,,,,,,,S/PDIF 1 NAX Tx
-,,,,,,,,,,,,,,,,,,RCA 1 NAX Tx
-,,,,,,,,,,,,,,,,,,Bluetooth NAX Tx
-,,,,,,,,,,,,,,,,,,PCM 1 NAX Tx (surround)
-,,,,,,,,,,,,,,,,,,PCM 2 NAX Tx (surround)
-,,,,,,,,,,,,,,,,,,PCM 3 NAX Tx (surround)
-,,,,,,,,,,,,,,,,,,PCM 4 NAX Tx (surround)
-,,,,,,,,,,,,,,,,,,PCM 5 NAX Tx (surround)
-,,,,,,,,,,,,,,,,,,PCM 6 NAX Tx (surround)
-,,,,,,,,,,,,,,,,,,PCM 7 NAX Tx (surround)
-,,,,,,,,,,,,,,,,,,PCM 8 NAX Tx (surround)
-,,,,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,,,,
+(friendly name)", Analog in 1 (RCA 1L), Gain , Mute , 8x2 Routing Matrix, Signal Detect, Tone Settings, Balance, Output Settings, Mono/Stereo, Grouping, Speaker Config, Casting/Streaming, PEQ-10/FIR, Volume, Delay , Mute  , Chimes, Zone 1L (Amp)
+                , Analog in 2 (RCA 1R), Gain , Mute ,                   , Signal Detect, Tone Settings, Balance, Output Settings, Mono/Stereo, Grouping, Speaker Config, Casting/Streaming, PEQ-10/FIR, Volume, Delay , Mute  , Chimes, Zone 1R (Amp)
+                , Digital Toslink in  , Gain , Mute ,                   ,              ,              ,        , Output Settings,            ,         ,               ,                  , PEQ-10/FIR,       ,       ,       ,       , Analog Line Out 1L
+                , Digital S/PDIF in   , Gain , Mute ,                   ,              ,              ,        , Output Settings,            ,         ,               ,                  , PEQ-10/FIR,       ,       ,       ,       , Analog Line Out 1R
+                , eARC                , Gain , Mute ,                   ,              ,              ,        , Output Settings,            ,         ,               ,                  , EQ-LPF    ,       ,       ,       ,       , Analog Line Out 2 (sub)
+                , Bluetooth           , Gain , Mute ,                   ,              ,              ,        ,                ,            ,         ,               ,                  ,           ,       ,       ,       ,       , MediaStream 1 Tx
+                , AES67 in 1L         , Gain , Mute ,                   ,              ,              ,        ,                ,            ,         ,               ,                  ,           ,       ,       ,       ,       , MediaStream 2 Tx
+                , AES67 in 1R         , Gain , Mute ,                   ,              ,              ,        ,                ,            ,         ,               ,                  ,           ,       ,       ,       ,       , Toslink 1 NAX Tx
+                ,                     ,      ,      ,                   ,              ,              ,        ,                ,            ,         ,               ,                  ,           ,       ,       ,       ,       , S/PDIF 1 NAX Tx
+                ,                     ,      ,      ,                   ,              ,              ,        ,                ,            ,         ,               ,                  ,           ,       ,       ,       ,       , RCA 1 NAX Tx
+                ,                     ,      ,      ,                   ,              ,              ,        ,                ,            ,         ,               ,                  ,           ,       ,       ,       ,       , Bluetooth NAX Tx
+                ,                     ,      ,      ,                   ,              ,              ,        ,                ,            ,         ,               ,                  ,           ,       ,       ,       ,       , PCM 1 NAX Tx (surround)
+                ,                     ,      ,      ,                   ,              ,              ,        ,                ,            ,         ,               ,                  ,           ,       ,       ,       ,       , PCM 2 NAX Tx (surround)
+                ,                     ,      ,      ,                   ,              ,              ,        ,                ,            ,         ,               ,                  ,           ,       ,       ,       ,       , PCM 3 NAX Tx (surround)
+                ,                     ,      ,      ,                   ,              ,              ,        ,                ,            ,         ,               ,                  ,           ,       ,       ,       ,       , PCM 4 NAX Tx (surround)
+                ,                     ,      ,      ,                   ,              ,              ,        ,                ,            ,         ,               ,                  ,           ,       ,       ,       ,       , PCM 5 NAX Tx (surround)
+                ,                     ,      ,      ,                   ,              ,              ,        ,                ,            ,         ,               ,                  ,           ,       ,       ,       ,       , PCM 6 NAX Tx (surround)
+                ,                     ,      ,      ,                   ,              ,              ,        ,                ,            ,         ,               ,                  ,           ,       ,       ,       ,       , PCM 7 NAX Tx (surround)
+                ,                     ,      ,      ,                   ,              ,              ,        ,                ,            ,         ,               ,                  ,           ,       ,       ,       ,       , PCM 8 NAX Tx (surround)
+                ,                     ,      ,      ,                   ,              ,              ,        ,                ,            ,         ,               ,                  ,           ,       ,       ,       ,       , 
+                ,                     ,      ,      ,                   ,              ,              ,        ,                ,            ,         ,               ,                  ,           ,       ,       ,       ,       , 
