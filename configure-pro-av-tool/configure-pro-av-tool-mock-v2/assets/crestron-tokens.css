@@ -1,0 +1,298 @@
+/* =========================================================================
+   CRESTRON DESIGN SYSTEM — COLORS & TYPE
+   Derived from the PPT_2025_Template_v7.pptx master ("Master 2025-05").
+   Palette follows the Crestron "True Blue" system.
+   ========================================================================= */
+
+/* ---------- FONTS -----------------------------------------------------------
+   Template fonts:
+     • Aptos Display (major) — Microsoft's newer sans; available as webfont via
+       Microsoft but not freely licensed on Google Fonts. We substitute
+       "Inter" at the display weight as a close match (humanist geometric,
+       tall x-height, similar cap proportions).
+     • Aptos (body)          — same family, body cut.  Substitution: Inter.
+     • Arial / Arial Narrow  — legacy fallbacks. Use system stack.
+     • Calibri               — legacy fallback. Use system stack.
+   FLAG: Replace Inter with the real Aptos webfont when licensed, or with
+   Microsoft's "Aptos" if bundling allowed. See fonts/README.md.
+   --------------------------------------------------------------------------- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  /* ================== BRAND PALETTE ==================
+     Direct from theme1.xml <a:clrScheme name="Custom 7">                */
+  --crestron-black:          #000000;   /* dk1 */
+  --crestron-white:          #FFFFFF;   /* lt1 */
+  --crestron-slate:          #333F48;   /* dk2 - primary dark text/UI */
+  --crestron-cloud:          #C1C6C8;   /* lt2 - neutral light */
+  --crestron-true-blue:      #003B71;   /* accent1 - PRIMARY BRAND */
+  --crestron-mid-blue:       #007CA0;   /* accent2 */
+  --crestron-sky:            #43C5E3;   /* accent3 - energy accent */
+  --crestron-gold:           #E1B71B;   /* accent4 */
+  --crestron-sand:           #D0B787;   /* accent5 / hlink */
+  --crestron-stone:          #A79F88;   /* accent6 / followed link */
+
+  /* ================== NEUTRAL RAMP ==================
+     Built around #333F48 slate — cool-tinged greys                      */
+  --neutral-0:   #FFFFFF;
+  --neutral-50:  #F7F8F9;
+  --neutral-100: #EEF0F2;
+  --neutral-200: #DFE2E5;
+  --neutral-300: #C1C6C8;   /* = cloud */
+  --neutral-400: #8A9197;
+  --neutral-500: #5C666D;
+  --neutral-600: #454F57;
+  --neutral-700: #333F48;   /* = slate */
+  --neutral-800: #1F2930;
+  --neutral-900: #0B1217;
+  --neutral-1000: #000000;
+
+  /* ================== BLUE RAMP ==================
+     Built from True Blue #003B71 → Sky #43C5E3 (template gradient DNA)  */
+  --blue-50:  #E6F3FA;
+  --blue-100: #C5E4F3;
+  --blue-200: #8ED2EC;
+  --blue-300: #43C5E3;   /* = sky  */
+  --blue-400: #1AA3C6;
+  --blue-500: #007CA0;   /* = mid  */
+  --blue-600: #005A89;
+  --blue-700: #003B71;   /* = true blue (primary) */
+  --blue-800: #002851;
+  --blue-900: #001530;
+
+  /* ================== SEMANTIC — LIGHT MODE ==================
+     Light mode is the default Crestron master.                         */
+  --bg:           var(--neutral-0);
+  --bg-subtle:    var(--neutral-50);
+  --bg-muted:     var(--neutral-100);
+  --bg-brand:     var(--crestron-true-blue);
+  --bg-brand-alt: var(--blue-800);
+
+  --fg:           var(--crestron-slate);   /* primary body text */
+  --fg-strong:    var(--neutral-900);
+  --fg-muted:     var(--neutral-500);
+  --fg-subtle:    var(--neutral-400);
+  --fg-on-brand:  var(--neutral-0);
+  --fg-brand:     var(--crestron-true-blue);
+  --fg-brand-alt: var(--crestron-sky);
+
+  --border:       var(--neutral-200);
+  --border-strong:var(--neutral-300);
+  --divider-accent: var(--crestron-sky);   /* the thin cyan rule seen in template */
+
+  --link:         var(--crestron-true-blue);
+  --link-hover:   var(--crestron-mid-blue);
+  --link-visited: var(--crestron-sand);
+
+  --success: #2E7D4F;
+  --warning: var(--crestron-gold);
+  --danger:  #B3261E;
+  --info:    var(--crestron-mid-blue);
+
+  /* ================== RADII ================== */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 16px;
+  --radius-pill: 999px;
+
+  /* ================== SPACING (4px base) ================== */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+
+  /* ================== SHADOWS ================== */
+  --shadow-xs: 0 1px 2px rgba(0, 59, 113, 0.06);
+  --shadow-sm: 0 2px 4px rgba(0, 59, 113, 0.08), 0 1px 2px rgba(0, 59, 113, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 59, 113, 0.10), 0 2px 4px rgba(0, 59, 113, 0.06);
+  --shadow-lg: 0 12px 32px rgba(0, 59, 113, 0.14), 0 4px 8px rgba(0, 59, 113, 0.08);
+  --shadow-xl: 0 24px 64px rgba(0, 59, 113, 0.18);
+  --shadow-focus: 0 0 0 3px rgba(67, 197, 227, 0.40);
+
+  /* ================== TYPE SYSTEM ================== */
+  --font-display: 'Inter', 'Aptos Display', 'Aptos', 'Segoe UI', -apple-system, sans-serif;
+  --font-body:    'Inter', 'Aptos', 'Segoe UI', -apple-system, Arial, sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* scale — matches template proportions (display is generous) */
+  --text-display-xl: clamp(48px, 6vw, 88px);
+  --text-display:    clamp(40px, 5vw, 64px);
+  --text-h1: clamp(32px, 4vw, 48px);
+  --text-h2: clamp(26px, 3vw, 36px);
+  --text-h3: clamp(20px, 2.2vw, 26px);
+  --text-h4: 18px;
+  --text-lg: 18px;
+  --text-md: 16px;
+  --text-sm: 14px;
+  --text-xs: 12px;
+  --text-eyebrow: 12px;
+
+  --leading-tight: 1.05;
+  --leading-snug:  1.2;
+  --leading-body:  1.5;
+  --leading-loose: 1.7;
+
+  --weight-light: 300;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-heavy: 800;
+  --weight-black: 900;
+
+  --tracking-tight:  -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide:   0.02em;
+  --tracking-eyebrow:0.14em;
+
+  /* ================== MOTION ================== */
+  --ease-out:  cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast:   120ms;
+  --dur-normal: 200ms;
+  --dur-slow:   320ms;
+}
+
+/* =========================================================================
+   DARK MODE — "Prevents glare in low-lit rooms" (slide 13 copy)
+   The template ships a matching dark master. Same accents, inverted surfaces.
+   ========================================================================= */
+:root[data-theme="dark"],
+.theme-dark {
+  --bg:           #0B1623;            /* deep navy, not pure black */
+  --bg-subtle:    #0E1C2E;
+  --bg-muted:     #14263C;
+  --bg-brand:     var(--crestron-true-blue);
+  --bg-brand-alt: #001530;
+
+  --fg:           #D6E4F0;            /* cool off-white */
+  --fg-strong:    #FFFFFF;
+  --fg-muted:     #8FA3B8;
+  --fg-subtle:    #5A6E84;
+  --fg-on-brand:  #FFFFFF;
+  --fg-brand:     var(--crestron-sky);  /* brand color flips to sky in dark */
+  --fg-brand-alt: var(--crestron-white);
+
+  --border:       #1E3149;
+  --border-strong:#2B4566;
+  --divider-accent: var(--crestron-sky);
+
+  --link:         var(--crestron-sky);
+  --link-hover:   #8ED2EC;
+}
+
+/* =========================================================================
+   SEMANTIC ELEMENT DEFAULTS
+   ========================================================================= */
+html, body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  line-height: var(--leading-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, .h1 {
+  font-family: var(--font-display);
+  font-size: var(--text-h1);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  color: var(--fg-strong);
+  margin: 0 0 var(--space-4);
+}
+h2, .h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-h2);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  color: var(--fg-strong);
+  margin: 0 0 var(--space-3);
+}
+h3, .h3 {
+  font-family: var(--font-display);
+  font-size: var(--text-h3);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  color: var(--fg-strong);
+  margin: 0 0 var(--space-2);
+}
+h4, .h4 {
+  font-size: var(--text-h4);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  color: var(--fg-strong);
+  margin: 0 0 var(--space-2);
+}
+.display {
+  font-family: var(--font-display);
+  font-size: var(--text-display);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  color: var(--fg-brand);
+}
+.display-xl {
+  font-family: var(--font-display);
+  font-size: var(--text-display-xl);
+  font-weight: var(--weight-heavy);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  color: var(--fg-brand);
+}
+.eyebrow {
+  font-size: var(--text-eyebrow);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--fg-brand);
+}
+p {
+  margin: 0 0 var(--space-3);
+  color: var(--fg);
+  line-height: var(--leading-body);
+  text-wrap: pretty;
+}
+.lead {
+  font-size: var(--text-lg);
+  line-height: var(--leading-body);
+  color: var(--fg);
+}
+small, .small {
+  font-size: var(--text-sm);
+  color: var(--fg-muted);
+}
+code, pre, kbd, .mono {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+a {
+  color: var(--link);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out);
+}
+a:hover {
+  color: var(--link-hover);
+  border-bottom-color: currentColor;
+}
+
+/* A signature Crestron motif — a thin cyan rule separating header bands */
+.rule-accent {
+  height: 2px;
+  background: var(--divider-accent);
+  border: 0;
+  width: 100%;
+}
