@@ -216,6 +216,38 @@
 
 ---
 
+#### User Story B-34
+- **Summary:** Filter the canvas by signal type from the legend so only relevant ports and wires are shown
+
+##### Use Case:
+- **As an** installer working on a mixed-signal system (HDMI, AoIP, analog, Bluetooth, etc.)
+- **I want to** toggle signal types on and off directly from the canvas legend/key
+- **so that** I can focus on one signal domain at a time — for example showing only HDMI ports and wires — without visual noise from unrelated signal types
+
+##### Acceptance Criteria:
+- **Scenario:** Installer opens the canvas with a mixed-signal system
+- **Given:** I have a system open on the canvas with devices spanning multiple signal types
+- **and Given:** The legend is displayed as an interactive filter
+- **When:** The canvas loads
+- **Then:** Every signal type present in the system is shown as selected (visible) by default, so I see the full system before narrowing it down
+
+- **Scenario:** Installer unselects a signal type to hide it
+- **Given:** All signal types are currently selected on the canvas
+- **When:** I click a signal type in the legend (e.g., AoIP) to unselect it
+- **Then:** All ports and wires of that signal type are hidden from the canvas, the remaining signal types stay visible, and the legend clearly indicates which types are currently selected vs. hidden
+
+- **Scenario:** Installer isolates a single signal type
+- **Given:** I have unselected several signal types
+- **When:** Only one signal type (e.g., HDMI) remains selected
+- **Then:** The canvas shows only HDMI ports and HDMI wires, and a control is available to re-show all signal types in one action
+
+- **Scenario:** Filtering does not alter the underlying configuration
+- **Given:** I have hidden one or more signal types via the legend filter
+- **When:** I view or later re-show the hidden types
+- **Then:** No routes are created, removed, or modified by filtering — the filter only affects what is displayed, and hidden ports remain valid endpoints for their existing connections
+
+---
+
 ## Epic 4: Basic Troubleshooting & Live Monitoring
 
 *Signal tracing, device status widgets, and core troubleshooting instrumentation for the initial onsite experience.*
@@ -700,17 +732,50 @@
 
 ## Story Map Summary
 
-| Epic | NOW (Phase A) | NEXT (Phase B) | LATER (Phase C) | LATER (Phase D) |
-|---|---|---|---|---|
-| 1. Canvas & Visual Workspace | A-01, A-02, A-03, A-27 | — | — | — |
-| 2. Routing & Signal Flow | A-05, A-06, A-07, A-28 | — | — | — |
-| 3. Advanced Routing & Canvas Customization | — | B-08, B-09 | — | — |
-| 4. Basic Troubleshooting & Live Monitoring | A-10, A-12, A-29 | — | — | — |
-| 5. Live Meters & Signal Presence | — | B-11, B-13 | — | — |
-| 6. Advanced Troubleshooting | — | - | B-14, B-15 | — |
-| 7. Inline DSP Controls | A-16, A-30 | — | — | — |
-| 8. Device-Level DSP Configuration | — | — | C-17, C-18 | — |
-| 9. Device Discovery & Representation | A-31 | — | C-19, C-20 | — |
-| 10. Deployment & Live System State | — | B-23, B-24, B-32 | — | — |
-| 11. Performance & Scale | A-33 | — | C-26 | — |
-| 12. Offline System Design & Deployment | — | — | — | D-04, D-21, D-22, D-25 |
+| Epic | NOW (Phase A) | NEXT (Phase B) | LATER (Phases C, D) |
+|---|---|---|---|
+| Summary | - Deliver the primary zoomable workspace where installers and designers see, arrange, and interact with their full AV system through node-based device representation, signal connections, and room/system switching. <br>- Enable core route creation with drag-to-connect routing, constraint validation, and bidirectional sync between the canvas and routing grid. <br>- Provide signal tracing, device status widgets, and core troubleshooting instrumentation for the initial onsite commissioning experience. <br>- Give installers quick-access gain, mute, and delay adjustments directly from within the advanced device view on the canvas. | NEXT (Phase B) <br>- Build on the routing foundation with canvas labeling, port visibility controls, and schematic refinement tools for more polished system designs. <br>- Surface real-time signal metering on canvas connections to confirm what's actually active during live operation, plus guided signal-break detection.| LATER (Phases C, D) <br>- Deliver structured diagnostic flows, sequential DSP path inspection, and proactive error surfacing to speed up complex issue resolution. |
+| 1. Canvas & Visual Workspace | A-01, A-02, A-03, A-27 | — | — |
+| 2. Routing & Signal Flow | A-05, A-06, A-07, A-28 | — | — |
+| 3. Advanced Routing & Canvas Customization | — | B-08, B-09, B-34 | — |
+| 4. Basic Troubleshooting & Live Monitoring | A-10, A-12, A-29 | — | — |
+| 5. Live Meters & Signal Presence | — | B-11, B-13 | — |
+| 6. Advanced Troubleshooting | — | - | B-14, B-15 |
+| 7. Inline DSP Controls | A-16, A-30 | — | — |
+| 8. Device-Level DSP Configuration | — | — | C-17, C-18 |
+| 9. Device Discovery & Representation | A-31 | — | C-19, C-20 |
+| 10. Deployment & Live System State | — | B-23, B-24, B-32 | — |
+| 11. Performance & Scale | A-33 | — | C-26 |
+| 12. Offline System Design & Deployment | — | — | D-04, D-21, D-22, D-25 |
+
+
+
+CHOME-118676: Epic 6: Advanced Troubleshooting
+Backlog
+ — Deliver structured diagnostic flows, sequential DSP path inspection, and proactive error surfacing to speed up complex issue resolution.
+
+CHOME-118677: Epic 7: Inline DSP Controls
+Backlog
+ — Give installers quick-access gain, mute, and delay adjustments directly from within the advanced device view on the canvas.
+
+CHOME-118678: Epic 8: Device-Level DSP Configuration
+Backlog
+ — Provide deep per-device audio dashboards and graphical DSP block editing for power users working with complex audio systems.
+
+CHOME-118679: Epic 9: Device Discovery & Representation
+Backlog
+ — Define how devices are found, displayed, and differentiated — including static analog devices and clarity between placeholder vs. physical devices.
+
+CHOME-118680: Epic 10: Deployment & Live System State
+Backlog
+ — Handle deploying configuration to live hardware, confirming persistence, and maintaining trust in what is actually running on the system.
+
+CHOME-118681: Epic 11: Performance & Scale
+Backlog
+ — Ensure the canvas and tooling remain fast and trustworthy as system complexity and device count grow.
+
+CHOME-118682: Epic 12: Offline System Design & Deployment
+Backlog
+ — Enable full offline design capability from pre-wire planning through device association and deployment to live hardware, supporting Designer Dana's workflow before arriving on site.
+
+

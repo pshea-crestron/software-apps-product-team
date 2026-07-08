@@ -1,0 +1,18 @@
+# Exclude the deprecated first mock prototype folder entirely
+configure-pro-av-tool-mock/
+# Exclude unorganized old notes to save token scanning
+configure-pro-av-user-stories-notstructured.md
+
+# Ignore the devices CSV files, for now.
+**/devices/*.csv
+
+# Ignore binary asset images (Claude cannot read or use these)
+**/assets/*.png
+**/assets/*.jpg
+**/assets/*.jpeg
+**/assets/*.svg
+
+# Ignore standard editor/OS bloat
+.DS_Store
+.git/
+.vscode/
