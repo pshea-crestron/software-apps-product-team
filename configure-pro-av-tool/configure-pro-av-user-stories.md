@@ -13,6 +13,27 @@
 
 ---
 
+## Story Map Summary
+
+| Epic | NOW (Phase A) | NEXT (Phase B) | LATER (Phases C, D) |
+|---|---|---|---|
+| Summary | + Deliver the primary zoomable workspace where installers and designers see, arrange, and interact with their full AV system through node-based device representation, signal connections, and room/system switching. <br>+ View and create routes in a matrix-based routing grid for high-density channel routing. <br>+ Enable core route creation with drag-to-connect routing, constraint validation, and bidirectional sync between the canvas and routing grid. <br>+ Provide signal tracing, device status widgets, and core troubleshooting instrumentation for the initial onsite commissioning experience. <br>+ Give installers quick-access gain, mute, and delay adjustments directly from within the advanced device view on the canvas. | + Build on the routing foundation with canvas labeling, port visibility controls, and schematic refinement tools for more polished system designs. <br>+ Surface real-time signal metering on canvas connections to confirm what's actually active during live operation, plus guided signal-break detection.| + Deliver structured diagnostic flows, sequential DSP path inspection, and proactive error surfacing to speed up complex issue resolution. |
+|---|---|---|---|
+| **1. Canvas & Visual Workspace** | **A-01:** Render live devices as visual nodes so installers can see the full system at a glance<br><br>**A-02:** Persist canvas layout across sessions so context is never lost<br><br>**A-03:** Switch between rooms without accidentally cross-routing systems<br><br>**A-27:** Instrument canvas workspace usage to measure whether the canvas is becoming the primary configuration surface | — | — |
+| **2. Routing & Signal Flow** | **A-05:** Create a route by connecting device nodes on the canvas<br><br>**A-06:** See canvas and routing grid stay in sync so routing can be trusted<br><br>**A-07:** Prevent invalid routes from being created to avoid bad configurations<br><br>**A-28:** Instrument routing interactions to measure drag-drop success rate and routing error frequency<br><br>**A-34:** View and create routes in a matrix-based routing grid for high-density channel routing | — | — |
+| **3. Advanced Routing & Canvas Customization** | — | **B-08:** Add a text tag to label any source or destination point on the canvas<br><br>**B-09:** Customize which inputs and outputs are visible on a device node to reduce canvas clutter<br><br>**B-34:** Filter the canvas by signal type from the legend so only relevant ports and wires are shown | — |
+| **4. Basic Troubleshooting & Live Monitoring** | **A-10:** Trace a signal path end-to-end to quickly find where it breaks<br><br>**A-12:** See a real-time status widget for each NAX device to monitor crucial device health at a glance<br><br>**A-29:** Instrument troubleshooting workflows to measure time-to-diagnosis and external tool switching | — | — |
+| **5. Live Meters & Signal Presence** | — | **B-11:** See live meters and device status directly on canvas nodes<br><br>**B-13:** Follow a structured "find where signal breaks" flow to diagnose audio issues confidently | — |
+| **6. Advanced Troubleshooting** | — | — | **C-14:** View the sequential DSP blocks for any signal path and edit any block inline<br><br>**C-15:** Surface error states and suspicious device conditions proactively on the canvas |
+| **7. Inline DSP Controls** | — | **B-16:** Adjust gain or mute inline on a device node<br><br>**B-30:** Instrument DSP interactions to measure whether Configure Pro is replacing external DSP tools | — |
+| **8. Device-Level DSP Configuration** | — | — | **C-17:** Open a device-level dashboard with a focused audio view for deep per-device configuration<br><br>**C-18:** Edit DSP blocks graphically (EQ, mixers, internal matrices) for advanced tuning |
+| **9. Device Discovery & Representation** | **A-31:** Instrument device panel usage to measure how installers are adding devices to the canvas | — | **C-19:** Clearly distinguish discovered (physical) devices from placeholder devices on the canvas<br><br>**C-20:** Represent analog amplifiers and passive speakers as static nodes so they can participate in routing and visualization |
+| **10. Deployment & Live System State** | — | **B-23:** See a "what is live right now" view to confirm deployed configuration<br><br>**B-24:** Confirm that configuration will persist on devices after disconnecting<br><br>**B-32:** Instrument deployment events to measure first-time success rate and catch data loss incidents | — |
+| **11. Performance & Scale** | **A-33:** Instrument canvas performance to detect latency and degradation thresholds before users do | — | **C-26:** Work fluidly on systems with 50+ devices without canvas performance degradation |
+| **12. Offline System Design & Deployment** | — | — | **D-04:** Always know whether changes will affect a live system or only an offline design<br><br>**D-21:** Design a full system offline before arriving on site<br><br>**D-22:** Associate discovered live devices to offline placeholder nodes during commissioning<br><br>**D-25:** Deploy an offline-designed configuration to the live system with a clear confirmation |
+
+---
+
 ## Epic 1: Canvas & Visual Workspace
 
 *The primary zoomable workspace where installers and designers see, arrange, and interact with their full system.*
@@ -169,6 +190,24 @@
 - **Given:** Canvas routing and grid routing have shipped with instrumentation in place
 - **When:** The product team reviews routing telemetry
 - **Then:** The data includes: total routing attempts vs. successful completions (drag-drop success rate); count of invalid connection attempts blocked by constraint enforcement; routing changes made via canvas vs. grid (split by surface); and canvas-to-grid sync error rate — all queryable per system and per time period
+
+---
+
+#### User Story A-34
+- **Summary:** View and create routes in a matrix-based routing grid for high-density channel routing
+
+##### Use Case:
+- **As an** installer configuring a system with many channels across multiple devices
+- **I want to** open a routing grid that displays all available sources and destinations in a matrix format and create routes by selecting intersections
+- **so that** I can efficiently build and audit large-scale routing without relying solely on the canvas, which becomes dense at high channel counts
+
+##### Acceptance Criteria:
+- **Scenario:** Installer opens the routing grid and creates routes via matrix intersections
+- **Given:** I have a system open in Configure Pro with multiple routable devices
+- **And Given:** The routing grid view is available as an alternate view to the canvas
+- **And Given:** The grid displays sources (devices and channels) on one axis and destinations on the other
+- **When:** I select an intersection in the grid to create a route
+- **Then:** The route is created, the intersection is visually marked as an active route, and the route is immediately reflected on the canvas view when I switch back
 
 ---
 
@@ -401,11 +440,11 @@
 
 ---
 
-### NOW — Phase A
+### NEXT — Phase B
 
 ---
 
-#### User Story A-16
+#### User Story B-16
 - **Summary:** Adjust gain or mute inline on a device node
 
 ##### Use Case:
@@ -422,7 +461,7 @@
 
 ---
 
-#### User Story A-30
+#### User Story B-30
 - **Summary:** Instrument DSP interactions to measure whether Configure Pro is replacing external DSP tools
 
 ##### Use Case:
@@ -727,55 +766,4 @@
 - **and Given:** All compatibility validations have passed
 - **When:** I initiate deployment
 - **Then:** Configure Pro applies the configuration to all live devices, confirms successful deployment with a clear status message, and updates the canvas to reflect the live state — with zero data loss from my offline design
-
----
-
-## Story Map Summary
-
-| Epic | NOW (Phase A) | NEXT (Phase B) | LATER (Phases C, D) |
-|---|---|---|---|
-| Summary | - Deliver the primary zoomable workspace where installers and designers see, arrange, and interact with their full AV system through node-based device representation, signal connections, and room/system switching. <br>- Enable core route creation with drag-to-connect routing, constraint validation, and bidirectional sync between the canvas and routing grid. <br>- Provide signal tracing, device status widgets, and core troubleshooting instrumentation for the initial onsite commissioning experience. <br>- Give installers quick-access gain, mute, and delay adjustments directly from within the advanced device view on the canvas. | NEXT (Phase B) <br>- Build on the routing foundation with canvas labeling, port visibility controls, and schematic refinement tools for more polished system designs. <br>- Surface real-time signal metering on canvas connections to confirm what's actually active during live operation, plus guided signal-break detection.| LATER (Phases C, D) <br>- Deliver structured diagnostic flows, sequential DSP path inspection, and proactive error surfacing to speed up complex issue resolution. |
-| 1. Canvas & Visual Workspace | A-01, A-02, A-03, A-27 | — | — |
-| 2. Routing & Signal Flow | A-05, A-06, A-07, A-28 | — | — |
-| 3. Advanced Routing & Canvas Customization | — | B-08, B-09, B-34 | — |
-| 4. Basic Troubleshooting & Live Monitoring | A-10, A-12, A-29 | — | — |
-| 5. Live Meters & Signal Presence | — | B-11, B-13 | — |
-| 6. Advanced Troubleshooting | — | - | B-14, B-15 |
-| 7. Inline DSP Controls | A-16, A-30 | — | — |
-| 8. Device-Level DSP Configuration | — | — | C-17, C-18 |
-| 9. Device Discovery & Representation | A-31 | — | C-19, C-20 |
-| 10. Deployment & Live System State | — | B-23, B-24, B-32 | — |
-| 11. Performance & Scale | A-33 | — | C-26 |
-| 12. Offline System Design & Deployment | — | — | D-04, D-21, D-22, D-25 |
-
-
-
-CHOME-118676: Epic 6: Advanced Troubleshooting
-Backlog
- — Deliver structured diagnostic flows, sequential DSP path inspection, and proactive error surfacing to speed up complex issue resolution.
-
-CHOME-118677: Epic 7: Inline DSP Controls
-Backlog
- — Give installers quick-access gain, mute, and delay adjustments directly from within the advanced device view on the canvas.
-
-CHOME-118678: Epic 8: Device-Level DSP Configuration
-Backlog
- — Provide deep per-device audio dashboards and graphical DSP block editing for power users working with complex audio systems.
-
-CHOME-118679: Epic 9: Device Discovery & Representation
-Backlog
- — Define how devices are found, displayed, and differentiated — including static analog devices and clarity between placeholder vs. physical devices.
-
-CHOME-118680: Epic 10: Deployment & Live System State
-Backlog
- — Handle deploying configuration to live hardware, confirming persistence, and maintaining trust in what is actually running on the system.
-
-CHOME-118681: Epic 11: Performance & Scale
-Backlog
- — Ensure the canvas and tooling remain fast and trustworthy as system complexity and device count grow.
-
-CHOME-118682: Epic 12: Offline System Design & Deployment
-Backlog
- — Enable full offline design capability from pre-wire planning through device association and deployment to live hardware, supporting Designer Dana's workflow before arriving on site.
-
 
