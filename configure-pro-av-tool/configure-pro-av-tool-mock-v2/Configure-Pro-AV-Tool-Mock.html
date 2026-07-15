@@ -10,9 +10,14 @@
 <helmet>
 <link rel="stylesheet" href="assets/crestron-tokens.css">
 <style>
+  /* Prototype fonts: use the Cerebri Sans Pro stack everywhere (overrides crestron-tokens.css) */
+  :root {
+    --font-body: 'Cerebri Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-display: 'Cerebri Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
   *, *::before, *::after { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; height: 100%; }
-  #cp-root { position: fixed; inset: 0; font-family: var(--font-body); color: var(--fg); background: var(--bg-muted); }
+  #cp-root { position: fixed; inset: 0; font-family: var(--font-body); color: var(--fg); background: var(--bg-muted); -webkit-font-smoothing: antialiased; }
   .cp-btn { font-family: var(--font-body); }
   input[type=range].cp-range { -webkit-appearance: none; appearance: none; height: 4px; border-radius: 999px; background: var(--neutral-200); }
   input[type=range].cp-range::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--crestron-true-blue); cursor: pointer; border: 2px solid #fff; box-shadow: var(--shadow-xs); }
@@ -114,6 +119,7 @@ class Component extends DCLogic {
     routingView: "canvas",
     signalFilter: this.buildSignalFilter(),
     deviceDsp: {},
+    collapsedDevices: {},
     vp: { x: 0, y: 0, z: 0.45 },
     selectedDev: null,
     tracedChain: null,
@@ -126,13 +132,27 @@ class Component extends DCLogic {
   // ============ HELPERS ============
   isDspCapable(dev) { return dev.type === "DSP" || dev.type === "Amplifier" || dev.type === "AV Receiver"; }
   headerOffset(dev) { return this.HEADER_H + (dev.nax ? this.NAX_WIDGET_H : 0); }
+
+  // ---- Collapse / hide-unconnected-ports (ported from prototype) ----
+  // When a device is collapsed we only render ports that carry an active route.
+  isCollapsed(devId) { return !!(this.state && this.state.collapsedDevices && this.state.collapsedDevices[devId]); }
+  visibleInputs(dev) { return this.isCollapsed(dev.id) ? dev.inputs.filter(p => this.portHasSignal(dev.id, p.id, "input")) : dev.inputs; }
+  visibleOutputs(dev) { return this.isCollapsed(dev.id) ? dev.outputs.filter(p => this.portHasSignal(dev.id, p.id, "output")) : dev.outputs; }
+  visiblePortRows(dev) { return Math.max(this.visibleInputs(dev).length, this.visibleOutputs(dev).length); }
+  toggleCollapse(devId) {
+    this.setState(prev => ({ collapsedDevices: { ...prev.collapsedDevices, [devId]: !prev.collapsedDevices[devId] } }));
+    this.track("canvasInteractions", "Toggle collapse " + (this.deviceById(devId)?.name || devId));
+  }
+
   cardHeight(dev, showDsp = false) {
-    const n = Math.max(dev.inputs.length, dev.outputs.length, 1);
+    const rows = this.visiblePortRows(dev);
+    // Collapsed with no connected ports still reserves one row for the "No active connections" note.
+    const n = this.isCollapsed(dev.id) ? Math.max(rows, 1) : Math.max(dev.inputs.length, dev.outputs.length, 1);
     const base = this.headerOffset(dev) + n * this.PORT_H + this.CARD_PAD * 2;
     return base + (showDsp && this.isDspCapable(dev) ? this.DSP_FOOTER_H : 0);
   }
   portY(dev, portId, side) {
-    const ports = side === "input" ? dev.inputs : dev.outputs;
+    const ports = side === "input" ? this.visibleInputs(dev) : this.visibleOutputs(dev);
     const idx = ports.findIndex(p => p.id === portId);
     if (idx < 0) return this.headerOffset(dev) + this.CARD_PAD;
     return this.headerOffset(dev) + this.CARD_PAD + idx * this.PORT_H + this.PORT_H / 2;
@@ -271,6 +291,36 @@ class Component extends DCLogic {
   cMark(size = 28) {
     const R = React.createElement;
     return R("img", { src: "assets/logo-trueblue-c.png", width: size, height: size, alt: "Crestron True Blue", style: { display: "block", objectFit: "contain" } });
+  }
+
+  // ============ PROTOTYPE DEVICE ICONS (ported from routing-map-prototype.html) ============
+  PROTO_ICONS = {
+    musicnote: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAdCAYAAAC9pNwMAAAAzklEQVR4nO2VzQ3CMAxGXxCiG5QTG7QnmIIRuFZiBcQGLMIKLEFvdANu3QAu9FBHQikiBKgLUj7JsvOjPFuJHFMUa4bQaBBqBH+olZgq+AjsxW7ATgu8cMYbXwLfvmPjwGwCvYMBtg8SUAG7CRht8FNFcAT/FDijbQrWLhrgDDg5cxMNcCn+DEyBXOLewYn4JVADFd0PohewVX0Xp5rgkva+U+Agc9eQA8aBwJz2cc3oPrJ5yEGhFVcCd6vLZe1lhVZs4Yl3l0d/1bki+C016TUfYBLVU1cAAAAASUVORK5CYII=',
+    appletv: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAABbUlEQVR4nM2W4ZGCMBCFnzf3X0rACowVsCXEDuwASqAEOkArsAQ2FQAVYAdJB3s/bpIBxTs9g3NvJkNYZt4Xkt0kKxERLKyPpQEA8DkXZGb0fQ/n3NOGWZaBiKZBGclaK0QkAF5qRCTDMATfCSQGYAy6gTRNEw3gW9M0IiISFt4Y8/T8/6a+7wEsnF0+cd6Swg9BkiRBkiTLQs7n8+S9rut4kKIoUBQFjDHQWgMAiAhaa2itQURI0zTE7/6tT+GyLCfpdzgcxiUkbdsKAFFKyTAMopQSrbXUdS0ApG1bSdN04lGW5TSFr3W9NfgU77ouPJkZRASlFJxzuFwuz02XN/PK8/wG7JyDMQZ5nuN0Ot2zug+pqgpd18E5F0bJzGEAfvGPxyOIKHyb0+wu7LXb7Wbj+/0+9JkZm83mJ5t/VIzRIK9U9MOQ7XYb3TzLsu/OWw+t2MevtTb4ruauRMz8p0NsvV5DKXVTtLOQ2PoCg7R+BjFAQT0AAAAASUVORK5CYII=',
+    sonos: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M6 6.5l12 11M18 6.5l-12 11"/></svg>',
+    monitor: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAdCAYAAAC9pNwMAAABGklEQVR4nO2VzU0DMRBGvyDOW8FkuTspYB3urCggNBBRwGYLYGkglBNtASgVhDsaN2A38HFAG34ETuREWlD2Xe3x84zH9ogk0QMXfUjPU3y5b4JzDstlje32BSGEJEmWZbC2QNM8QEQAAKNYcznnUJa3ycKfNtC263c5IywW9xTJWVU1vfexqVFUlVVVUyTnfH5HkoyKjZlSJKeqJks7vPcUyWnMlCQZba6uxN25HFvmz2ue33UaxIO4H/H3u3cMzrkva0bFk4kBADTN4y4whRACVqsnAIC1BYAeP4loxiKCtl2jLG92JUoVWlt8/EzYk/GhjMdXAADV14NjeuvqpIxns2uoxptNRLDZPP86/r8yPgV/8+UaxKfkDf8iMy0WIClJAAAAAElFTkSuQmCC',
+    speaker: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="2" width="16" height="20" rx="2"/><circle cx="12" cy="8" r="2.2"/><circle cx="12" cy="15.5" r="3.4"/></svg>',
+    box: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg>',
+  };
+  protoIconKey(dev) {
+    const n = (dev.name + " " + dev.model + " " + dev.manufacturer).toLowerCase();
+    if (n.includes("apple tv")) return "appletv";
+    if (n.includes("sonos")) return "sonos";
+    if (dev.type === "Display" || dev.type === "Projector") return "monitor";
+    if (dev.type === "Speaker") return "speaker";
+    // Crestron NAX / DSP / amplifier audio boxes -> music note
+    if (dev.nax || dev.type === "DSP" || dev.type === "Amplifier" || dev.type === "AV Receiver" || dev.type === "Media Player") return "musicnote";
+    return "box";
+  }
+  // Renders the prototype-style device glyph (PNG images or inline SVG) at the given size.
+  protoDeviceIcon(dev, size = 18, color = "var(--dg5, #636366)") {
+    const R = React.createElement;
+    const key = this.protoIconKey(dev);
+    const val = this.PROTO_ICONS[key];
+    if (val && val.startsWith("data:")) {
+      return R("img", { src: val, width: size, height: size, alt: "", style: { display: "block", objectFit: "contain" } });
+    }
+    return R("span", { style: { display: "block", width: size, height: size, color }, dangerouslySetInnerHTML: { __html: (val || this.PROTO_ICONS.box).replace("<svg", `<svg style="width:${size}px;height:${size}px;display:block"`) } });
   }
 
   /*METHODS*/
@@ -495,7 +545,7 @@ class Component extends DCLogic {
       s.sel.type !== "device" ? R("div", { style: { display: "flex", borderRadius: "var(--radius-md)", overflow: "hidden", border: "1px solid var(--border)" } },
         ["canvas", "grid"].map(v => R("button", { key: v, onClick: () => this.setRoutingView(v), className: "cp-btn",
           style: { display: "flex", alignItems: "center", gap: 6, padding: "5px 14px", fontSize: 12, border: "none", cursor: "pointer", background: s.routingView === v ? "var(--crestron-true-blue)" : "#fff", color: s.routingView === v ? "#fff" : "var(--fg-muted)", fontWeight: 600 } },
-          this.ic(v === "canvas" ? "route" : "grid", 14, s.routingView === v ? "#fff" : "var(--fg-muted)"), v === "canvas" ? "Canvas" : "Grid"))) : null,
+          this.ic(v === "canvas" ? "route" : "grid", 14, s.routingView === v ? "#fff" : "var(--fg-muted)"), v === "canvas" ? "Routing Map" : "Matrix"))) : null,
     );
   }
 
@@ -812,15 +862,19 @@ class Component extends DCLogic {
       onPointerDown: e => this.startDeviceDrag(dev.id, e),
       onClick: e => { if (!this._drag) { e.stopPropagation(); this.traceFromDevice(dev.id); this.setState({ selectedDev: dev.id }); this.track("canvasInteractions", "Select " + dev.name); } },
       onDoubleClick: () => this.setSel({ id: dev.id, type: "device", name: dev.name, device: dev }) },
-      // Header
-      R("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "0 6px 0 10px", background: isOOO ? "#FBE3E1" : "var(--bg-subtle)", borderRadius: "var(--radius-lg) var(--radius-lg) 0 0", borderBottom: `1px solid ${isOOO ? "#F2C4C0" : "var(--border)"}`, height: this.HEADER_H, boxSizing: "border-box" } },
-        R("div", { style: { width: 26, height: 26, borderRadius: "var(--radius-sm)", background: isOOO ? "rgba(179,38,30,0.1)" : "var(--blue-50)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 } }, this.deviceIcon(dev, 15, isOOO ? "var(--danger)" : "var(--crestron-true-blue)")),
+      // Header (prototype layout: bare device glyph, name + model, tools column)
+      R("div", { style: { display: "flex", alignItems: "center", gap: 9, padding: "0 6px 0 9px", background: isOOO ? "#FBE3E1" : "var(--bg-subtle)", borderRadius: "var(--radius-lg) var(--radius-lg) 0 0", borderBottom: `1px solid ${isOOO ? "#F2C4C0" : "var(--border)"}`, height: this.HEADER_H, boxSizing: "border-box" } },
+        R("div", { style: { width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: isOOO ? "var(--danger)" : "var(--dg5, #636366)" } }, this.protoDeviceIcon(dev, 18, isOOO ? "var(--danger)" : "var(--dg5, #636366)")),
         R("div", { style: { flex: 1, minWidth: 0 } },
-          R("div", { style: { fontSize: 11.5, fontWeight: 700, color: "var(--fg-strong)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, dev.name),
-          R("div", { style: { fontSize: 9, color: subColor, fontWeight: (isOOO || isMuted) ? 700 : 400, letterSpacing: (isOOO || isMuted) ? "0.05em" : 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, subText)),
+          R("div", { style: { fontSize: 12, fontWeight: 700, color: "var(--fg-strong)", lineHeight: "13px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, dev.name),
+          R("div", { style: { fontSize: 10, color: subColor, lineHeight: "12px", marginTop: 2, fontWeight: (isOOO || isMuted) ? 700 : 400, letterSpacing: (isOOO || isMuted) ? "0.05em" : 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, subText)),
         R("div", { style: { display: "flex", alignItems: "center", gap: 4 } },
           isLive ? R("div", { style: { width: 5, height: 5, borderRadius: "50%", background: "var(--crestron-sky)", animation: "cpPulse 2s infinite" } }) : null,
           R("div", { style: { width: 7, height: 7, borderRadius: "50%", background: isOOO ? "var(--danger)" : dev.status === "Online" ? "var(--success)" : "var(--danger)" } }),
+          // Collapse toggle: hide unconnected ports / show all (prototype expand button)
+          R("button", { onClick: e => { e.stopPropagation(); e.preventDefault(); this.toggleCollapse(dev.id); }, onDoubleClick: e => e.stopPropagation(), onPointerDown: e => e.stopPropagation(), className: "cp-btn", title: this.isCollapsed(dev.id) ? "Show all ports" : "Show only connected ports",
+            style: { width: 20, height: 20, borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: this.isCollapsed(dev.id) ? "var(--blue-50)" : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, flexShrink: 0, transform: this.isCollapsed(dev.id) ? "rotate(180deg)" : "none", transition: "transform var(--dur-fast)" } },
+            this.ic("chevron", 11, this.isCollapsed(dev.id) ? "var(--crestron-true-blue)" : "var(--fg-subtle)")),
           R("button", { onClick: e => { e.stopPropagation(); e.preventDefault(); this.toggleOutOfOrder(dev.id); }, onDoubleClick: e => e.stopPropagation(), onPointerDown: e => e.stopPropagation(), className: "cp-btn", title: isOOO ? "Bring back online" : "Take out of order (simulate failure)",
             style: { width: 20, height: 20, borderRadius: "var(--radius-sm)", border: `1px solid ${isOOO ? "var(--danger)" : "var(--border)"}`, background: isOOO ? "var(--danger)" : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, flexShrink: 0 } },
             this.ic(isOOO ? "refresh" : "power", 11, isOOO ? "#fff" : "var(--fg-subtle)"))),
@@ -860,8 +914,17 @@ class Component extends DCLogic {
   PortsLayer(dev) {
     const R = React.createElement;
     const s = this.state; const wp = s.wirePreview;
-    return R("div", { style: { position: "relative", height: Math.max(dev.inputs.length, dev.outputs.length) * this.PORT_H + this.CARD_PAD * 2 } },
-      dev.inputs.map((p, i) => {
+    const inputs = this.visibleInputs(dev);
+    const outputs = this.visibleOutputs(dev);
+    const rows = Math.max(inputs.length, outputs.length);
+    // Collapsed device with no active connections -> prototype's "No active connections" note.
+    if (this.isCollapsed(dev.id) && rows === 0) {
+      return R("div", { style: { position: "relative", height: this.PORT_H + this.CARD_PAD * 2, display: "flex", alignItems: "center", justifyContent: "center" } },
+        R("span", { style: { fontSize: 10, fontStyle: "italic", color: "var(--fg-subtle)" } }, "No active connections"));
+    }
+    // Prototype port dot: hollow ring in the signal color, fills solid when a route is present.
+    return R("div", { style: { position: "relative", height: rows * this.PORT_H + this.CARD_PAD * 2 } },
+      inputs.map((p, i) => {
         const dragging = !!wp;
         const compatible = dragging && this.signalsCompatible(wp.signal, p.signal) && wp.fromDev !== dev.id;
         const incompat = dragging && !compatible;
@@ -870,21 +933,19 @@ class Component extends DCLogic {
         const filteredOut = !this.signalVisible(p.signal); // B-34
         return R("div", { key: p.id, style: { position: "absolute", left: 0, top: this.CARD_PAD + i * this.PORT_H, height: this.PORT_H, display: "flex", alignItems: "center", paddingLeft: 4, opacity: filteredOut ? 0 : (incompat ? 0.22 : 1), pointerEvents: filteredOut ? "none" : "auto", transition: "opacity 0.15s" } },
           R("div", { "data-port-dev": dev.id, "data-port-id": p.id, "data-port-type": "input",
-            style: { width: compatible ? 14 : 10, height: compatible ? 14 : 10, borderRadius: "50%", background: col, border: "2px solid #fff", cursor: "pointer", marginLeft: -5, flexShrink: 0, zIndex: 30, transition: "all 0.15s",
-              boxShadow: compatible ? `0 0 0 2px ${col}, 0 0 8px ${col}` : hasSig ? `0 0 0 1px ${col}` : `0 0 0 1px ${col}`, animation: hasSig && !dragging ? "cpRing 2.4s infinite" : "none" } }),
-          R("span", { style: { fontSize: 9, color: hasSig ? "var(--fg)" : "var(--fg-muted)", fontWeight: hasSig ? 600 : 400, marginLeft: 7, whiteSpace: "nowrap", pointerEvents: "none" } }, p.label),
-          hasSig ? R("div", { style: { width: 4, height: 4, borderRadius: "50%", background: "var(--success)", marginLeft: 4, animation: "cpPulse 2s infinite", pointerEvents: "none" } }) : null);
+            style: { width: compatible ? 13 : 10, height: compatible ? 13 : 10, borderRadius: "50%", background: hasSig ? col : "#fff", border: `2px solid ${col}`, cursor: "pointer", marginLeft: -5, flexShrink: 0, zIndex: 30, transition: "all 0.15s",
+              boxShadow: compatible ? `0 0 0 2px ${col}, 0 0 8px ${col}` : "none", animation: hasSig && !dragging ? "cpRing 2.4s infinite" : "none" } }),
+          R("span", { style: { fontSize: 10, color: hasSig ? "var(--fg)" : "var(--fg-subtle)", fontWeight: hasSig ? 700 : 400, marginLeft: 7, whiteSpace: "nowrap", pointerEvents: "none" } }, p.label));
       }),
-      dev.outputs.map((p, i) => {
+      outputs.map((p, i) => {
         const col = this.SIGNAL_COLORS[p.signal] || "var(--crestron-mid-blue)";
         const hasSig = this.portHasSignal(dev.id, p.id, "output");
         const filteredOut = !this.signalVisible(p.signal); // B-34
         return R("div", { key: p.id, style: { position: "absolute", right: 0, top: this.CARD_PAD + i * this.PORT_H, height: this.PORT_H, display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 4, opacity: filteredOut ? 0 : 1, pointerEvents: filteredOut ? "none" : "auto", transition: "opacity 0.15s" } },
-          hasSig ? R("div", { style: { width: 4, height: 4, borderRadius: "50%", background: "var(--success)", marginRight: 4, animation: "cpPulse 2s infinite", pointerEvents: "none" } }) : null,
-          R("span", { style: { fontSize: 9, color: hasSig ? "var(--fg)" : "var(--fg-muted)", fontWeight: hasSig ? 600 : 400, marginRight: 7, whiteSpace: "nowrap", pointerEvents: "none" } }, p.label),
+          R("span", { style: { fontSize: 10, color: hasSig ? "var(--fg)" : "var(--fg-subtle)", fontWeight: hasSig ? 700 : 400, marginRight: 7, whiteSpace: "nowrap", pointerEvents: "none" } }, p.label),
           R("div", { "data-port-dev": dev.id, "data-port-id": p.id, "data-port-type": "output",
-            style: { width: 10, height: 10, borderRadius: "50%", background: col, border: "2px solid #fff", cursor: "crosshair", marginRight: -5, flexShrink: 0, zIndex: 30,
-              boxShadow: hasSig ? `0 0 0 1px ${col}` : `0 0 0 1px ${col}`, animation: hasSig ? "cpRing 2.4s infinite" : "none" }, onPointerDown: e => this.startWireDrag(dev.id, p.id, e) }));
+            style: { width: 10, height: 10, borderRadius: "50%", background: hasSig ? col : "#fff", border: `2px solid ${col}`, cursor: "crosshair", marginRight: -5, flexShrink: 0, zIndex: 30,
+              animation: hasSig ? "cpRing 2.4s infinite" : "none" }, onPointerDown: e => this.startWireDrag(dev.id, p.id, e) }));
       }),
     );
   }
@@ -936,12 +997,13 @@ class Component extends DCLogic {
           dests.map((dst, ci) => {
             const routed = isRouted(src.devId, src.portId, dst.devId, dst.portId);
             const disabled = src.devId === dst.devId || !this.signalsCompatible(src.signal, dst.signal);
+            const cellCol = this.SIGNAL_COLORS[src.signal] || "var(--crestron-true-blue)";
+            const hatched = "repeating-linear-gradient(45deg,#f4f4f6,#f4f4f6 4px,#eceef0 4px,#eceef0 8px)";
             return R("div", { key: "c" + ci, onClick: () => !disabled && toggleCell(src, dst), onMouseEnter: () => setHover(ri, ci), onMouseLeave: () => setHover(-1, -1),
               style: { width: CELL, height: CELL, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", borderRight: "1px solid var(--border)", borderBottom: "1px solid var(--border)",
-                background: disabled ? "var(--neutral-100)" : (hr === ri || hc === ci) ? (hr === ri && hc === ci ? "var(--blue-100)" : "var(--blue-50)") : ri % 2 === 0 ? "#fff" : "var(--neutral-50)", cursor: disabled ? "default" : "pointer" } },
-              routed ? R("div", { style: { width: 17, height: 17, borderRadius: "50%", background: "var(--crestron-true-blue)", display: "flex", alignItems: "center", justifyContent: "center" } }, this.ic("check", 11, "#fff", 2.5))
-                : disabled ? R("div", { style: { width: 6, height: 1, background: "var(--border-strong)" } })
-                : R("div", { style: { width: 8, height: 8, borderRadius: "50%", border: "1px solid var(--border-strong)" } }));
+                background: disabled ? hatched : (hr === ri || hc === ci) ? (hr === ri && hc === ci ? "var(--blue-100)" : "var(--blue-50)") : ri % 2 === 0 ? "#fff" : "var(--neutral-50)", cursor: disabled ? "not-allowed" : "pointer" } },
+              disabled ? null
+                : R("div", { style: { width: 16, height: 16, borderRadius: "50%", boxSizing: "border-box", border: `2px solid ${cellCol}`, background: routed ? cellCol : "#fff", transition: "background 0.12s" } }));
           }))),
       ));
   }
