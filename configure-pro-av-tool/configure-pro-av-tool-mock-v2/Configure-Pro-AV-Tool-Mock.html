@@ -41,6 +41,7 @@ class Component extends DCLogic {
       { id: "kitchen", name: "Kitchen" },
       { id: "living-room", name: "Living Room" },
       { id: "family-room", name: "Family Room" },
+      { id: "studio", name: "Studio" },
     ]},
     { id: "2nd-floor", name: "2nd Floor", type: "floor", children: [
       { id: "master", name: "Master Bedroom" },
@@ -102,14 +103,14 @@ class Component extends DCLogic {
     "living-room": { x: 0, y: 700, label: "Living Room" },
   };
 
-  SIGNAL_COLORS = { hdmi: "#003B71", analog_audio: "#E1B71B", digital_audio: "#007CA0", aoip: "#43C5E3", voip: "#A79F88", bluetooth: "#1AA3C6" };
+  SIGNAL_COLORS = { hdmi: "#003B71", analog_audio: "#CF9F02", digital_audio: "#007CA0", aoip: "#43C5E3", voip: "#A79F88", bluetooth: "#1AA3C6" };
   SIGNAL_LABELS = { hdmi: "HDMI", analog_audio: "Analog", digital_audio: "Digital", aoip: "AoIP", voip: "VoIP", bluetooth: "BT" };
 
-  CARD_W = 240; PORT_H = 26; HEADER_H = 52; CARD_PAD = 8; DSP_FOOTER_H = 58; NAX_WIDGET_H = 34; STORAGE_KEY = "configurePro.v1";
+  CARD_W = 240; PORT_H = 26; HEADER_H = 52; CARD_PAD = 8; DSP_FOOTER_H = 58; NAX_WIDGET_H = 34; STORAGE_KEY = "configurePro.v1"; GRID = 24;
 
   // ============ STATE ============
   state = {
-    screen: "home",
+    screen: "main",
     tab: "routing",
     sel: { id: "whole-system", type: "system", name: "Whole System" },
     expanded: { "1st-floor": true },
@@ -120,6 +121,8 @@ class Component extends DCLogic {
     signalFilter: this.buildSignalFilter(),
     deviceDsp: {},
     collapsedDevices: {},
+    hiddenPorts: {},
+    portSel: {},
     vp: { x: 0, y: 0, z: 0.45 },
     selectedDev: null,
     tracedChain: null,
@@ -136,18 +139,94 @@ class Component extends DCLogic {
   // ---- Collapse / hide-unconnected-ports (ported from prototype) ----
   // When a device is collapsed we only render ports that carry an active route.
   isCollapsed(devId) { return !!(this.state && this.state.collapsedDevices && this.state.collapsedDevices[devId]); }
-  visibleInputs(dev) { return this.isCollapsed(dev.id) ? dev.inputs.filter(p => this.portHasSignal(dev.id, p.id, "input")) : dev.inputs; }
-  visibleOutputs(dev) { return this.isCollapsed(dev.id) ? dev.outputs.filter(p => this.portHasSignal(dev.id, p.id, "output")) : dev.outputs; }
+  // A port is dropped from the layout when: the device is collapsed and the port carries no
+  // route, its signal type is filtered off via the legend (B-34), or it has been hidden
+  // individually. All three remove the port from the card so it resizes to reclaim the space.
+  isPortHidden(devId, side, portId) { const arr = this.state.hiddenPorts?.[devId]; return !!arr && arr.includes(side + ":" + portId); }
+  portShown(dev, p, side) {
+    if (this.isCollapsed(dev.id) && !this.portHasSignal(dev.id, p.id, side)) return false;
+    if (!this.signalVisible(p.signal)) return false;
+    if (this.isPortHidden(dev.id, side, p.id)) return false;
+    return true;
+  }
+  visibleInputs(dev) { return dev.inputs.filter(p => this.portShown(dev, p, "input")); }
+  visibleOutputs(dev) { return dev.outputs.filter(p => this.portShown(dev, p, "output")); }
   visiblePortRows(dev) { return Math.max(this.visibleInputs(dev).length, this.visibleOutputs(dev).length); }
   toggleCollapse(devId) {
     this.setState(prev => ({ collapsedDevices: { ...prev.collapsedDevices, [devId]: !prev.collapsedDevices[devId] } }));
     this.track("canvasInteractions", "Toggle collapse " + (this.deviceById(devId)?.name || devId));
   }
 
+  // ---- Individual port hiding ----
+  isPortSel(devId, side, portId) { return (this.state.portSel[devId] || []).includes(side + ":" + portId); }
+  hasPortSel(devId) { return (this.state.portSel[devId] || []).length > 0; }
+  hasHiddenPorts(devId) { return (this.state.hiddenPorts[devId] || []).length > 0; }
+  togglePortSel(devId, side, portId) {
+    const key = side + ":" + portId;
+    this.setState(prev => {
+      const cur = new Set(prev.portSel[devId] || []);
+      cur.has(key) ? cur.delete(key) : cur.add(key);
+      const next = { ...prev.portSel };
+      if (cur.size) next[devId] = [...cur]; else delete next[devId];
+      return { portSel: next };
+    });
+  }
+  commitHidePorts(devId) {
+    this.setState(prev => {
+      const sel = prev.portSel[devId] || [];
+      if (!sel.length) return {};
+      const cur = new Set(prev.hiddenPorts[devId] || []);
+      sel.forEach(k => cur.add(k));
+      const hp = { ...prev.hiddenPorts, [devId]: [...cur] };
+      const ps = { ...prev.portSel }; delete ps[devId];
+      return { hiddenPorts: hp, portSel: ps };
+    });
+    this.track("canvasInteractions", "Hide ports on " + (this.deviceById(devId)?.name || devId));
+  }
+  // Unhide: return hidden ports to the pending-selection state (shown again, highlighted red with
+  // the red X) so they can be re-hidden as-is or individually unselected before re-hiding.
+  unhideToSelection(devId) {
+    this.setState(prev => {
+      const hidden = prev.hiddenPorts[devId] || [];
+      if (!hidden.length) return {};
+      const sel = new Set(prev.portSel[devId] || []);
+      hidden.forEach(k => sel.add(k));
+      const hp = { ...prev.hiddenPorts }; delete hp[devId];
+      return { portSel: { ...prev.portSel, [devId]: [...sel] }, hiddenPorts: hp };
+    });
+    this.track("canvasInteractions", "Unhide ports on " + (this.deviceById(devId)?.name || devId));
+  }
+  // Hide a single port directly (used by the Matrix row/column hide controls). Writes to the
+  // same hiddenPorts state the canvas uses, so both views stay in sync automatically.
+  hidePort(devId, side, portId) {
+    const key = side + ":" + portId;
+    this.setState(prev => {
+      const cur = new Set(prev.hiddenPorts[devId] || []); cur.add(key);
+      const ps = { ...prev.portSel };
+      if (ps[devId]) { const s2 = new Set(ps[devId]); s2.delete(key); if (s2.size) ps[devId] = [...s2]; else delete ps[devId]; }
+      return { hiddenPorts: { ...prev.hiddenPorts, [devId]: [...cur] }, portSel: ps };
+    });
+    this.track("gridInteractions", "Hide " + side + " port (grid)");
+  }
+  // Matrix "show hidden" mirrors the canvas eye: hidden ports return to the pending-selection state
+  // (red X on the canvas) rather than being cleared outright.
+  unhideInViewToSelection(devices) {
+    this.setState(prev => {
+      const hp = { ...prev.hiddenPorts }, ps = { ...prev.portSel };
+      devices.forEach(d => {
+        const hidden = hp[d.id]; if (!hidden || !hidden.length) return;
+        const sel = new Set(ps[d.id] || []); hidden.forEach(k => sel.add(k)); ps[d.id] = [...sel];
+        delete hp[d.id];
+      });
+      return { hiddenPorts: hp, portSel: ps };
+    });
+    this.track("gridInteractions", "Unhide ports (re-select) from grid");
+  }
+
   cardHeight(dev, showDsp = false) {
-    const rows = this.visiblePortRows(dev);
-    // Collapsed with no connected ports still reserves one row for the "No active connections" note.
-    const n = this.isCollapsed(dev.id) ? Math.max(rows, 1) : Math.max(dev.inputs.length, dev.outputs.length, 1);
+    // Height tracks only the visible rows so the card resizes when ports are collapsed,
+    // signal-filtered (B-34), or individually hidden. Always reserve at least one row.
+    const n = Math.max(this.visiblePortRows(dev), 1);
     const base = this.headerOffset(dev) + n * this.PORT_H + this.CARD_PAD * 2;
     return base + (showDsp && this.isDspCapable(dev) ? this.DSP_FOOTER_H : 0);
   }
@@ -208,6 +287,7 @@ class Component extends DCLogic {
           positions: s.positions || prev.positions,
           routes: s.routes || prev.routes,
           deviceDsp: s.deviceDsp || prev.deviceDsp,
+          hiddenPorts: s.hiddenPorts || prev.hiddenPorts,
           vp: s.vp || prev.vp,
           expanded: s.expanded || prev.expanded,
           telemetry: { ...prev.telemetry, ...(s.telemetry || {}), layoutRestores: (s.telemetry?.layoutRestores || 0) + 1 },
@@ -217,14 +297,14 @@ class Component extends DCLogic {
   }
   persist() {
     try {
-      const { positions, routes, deviceDsp, vp, expanded, telemetry } = this.state;
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ positions, routes, deviceDsp, vp, expanded, telemetry }));
+      const { positions, routes, deviceDsp, hiddenPorts, vp, expanded, telemetry } = this.state;
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ positions, routes, deviceDsp, hiddenPorts, vp, expanded, telemetry }));
     } catch (e) {}
   }
   componentDidUpdate() {
     const s = this.state;
     const snap = this._snap || {};
-    const keys = ["positions","routes","deviceDsp","vp","expanded","telemetry"];
+    const keys = ["positions","routes","deviceDsp","hiddenPorts","vp","expanded","telemetry"];
     if (keys.some(k => snap[k] !== s[k])) this.persist();
     // Re-run active trace when blocking state changes (mute / gain / out-of-order / routes)
     const tc = s.tracedChain;
@@ -278,6 +358,7 @@ class Component extends DCLogic {
     refresh: '<path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"/>',
     target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
     eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
+    "eye-off": '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/><path d="M3 3 21 21"/>',
   };
   ic(name, size = 18, color = "currentColor", stroke = 1.8) {
     const R = React.createElement;
@@ -666,8 +747,22 @@ class Component extends DCLogic {
     const d = this._drag;
     if (!d) { if (this.state.wirePreview) { const c = this.toCanvas(e.clientX, e.clientY); this.setState(p => ({ wirePreview: { ...p.wirePreview, mx: c.x, my: c.y } })); } return; }
     if (d.type === "pan") { this.setState({ vp: { ...this.state.vp, x: d.ox + e.clientX - d.sx, y: d.oy + e.clientY - d.sy } }); }
-    else if (d.type === "device") { const c = this.toCanvas(e.clientX, e.clientY); this.setState(p => ({ positions: { ...p.positions, [d.id]: { x: c.x - d.offX, y: c.y - d.offY } } })); }
-    else if (d.type === "room") { const c = this.toCanvas(e.clientX, e.clientY); this.setState(p => { const u = { ...p.positions }; Object.entries(d.offsets).forEach(([id, o]) => { u[id] = { x: c.x + o.dx, y: c.y + o.dy }; }); return { positions: u }; }); }
+    else if (d.type === "device") { const c = this.toCanvas(e.clientX, e.clientY); const G = this.GRID; const nx = Math.round((c.x - d.offX) / G) * G, ny = Math.round((c.y - d.offY) / G) * G; this.setState(p => ({ positions: { ...p.positions, [d.id]: { x: nx, y: ny } } })); }
+    else if (d.type === "room") {
+      const c = this.toCanvas(e.clientX, e.clientY); const G = this.GRID;
+      const gx = Math.round(c.x / G) * G, gy = Math.round(c.y / G) * G;
+      // Proposed positions for this room's devices at the snapped anchor.
+      const proposed = {}; Object.entries(d.offsets).forEach(([id, o]) => { proposed[id] = { x: gx + o.dx, y: gy + o.dy }; });
+      // Proposed padded bounds for the dragged room; block the move if it would overlap another room.
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      this.devicesInRoom(d.roomId).forEach(dev => { const p = proposed[dev.id]; if (!p) return; minX = Math.min(minX, p.x); minY = Math.min(minY, p.y); maxX = Math.max(maxX, p.x + this.CARD_W); maxY = Math.max(maxY, p.y + this.cardHeight(dev)); });
+      if (minX !== Infinity) {
+        const pb = { x: minX - 24, y: minY - 38, w: maxX - minX + 48, h: maxY - minY + 58 };
+        const others = this.roomBounds(); delete others[d.roomId];
+        if (Object.values(others).some(b => this.rectsOverlap(pb, b))) return; // overlap -> reject this move
+      }
+      this.setState(p => ({ positions: { ...p.positions, ...proposed } }));
+    }
   }
   onCanvasPointerUp(e) {
     if (this.state.wirePreview) {
@@ -732,6 +827,7 @@ class Component extends DCLogic {
     return this.GenericPanel();
   }
 
+  rectsOverlap(a, b) { return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y; }
   roomBounds() {
     const b = {};
     this.allRooms().forEach(r => {
@@ -792,12 +888,50 @@ class Component extends DCLogic {
     );
   }
 
+  // ---- Offscreen-wire helpers ----
+  // Human-readable room name for a device's room id (falls back to the raw id).
+  roomName(roomId) { const r = this.allRooms().find(x => x.id === roomId); return r ? r.name : roomId; }
+  // Visible canvas region (in canvas coordinates) given the current viewport transform.
+  viewportCanvasBounds() {
+    if (!this.containerEl) return null;
+    const rect = this.containerEl.getBoundingClientRect();
+    const vp = this.state.vp;
+    const m = 8; // small margin so cards touching the edge still count as onscreen
+    return { minX: (-vp.x) / vp.z - m, minY: (-vp.y) / vp.z - m, maxX: (rect.width - vp.x) / vp.z + m, maxY: (rect.height - vp.y) / vp.z + m };
+  }
+  rectVisible(x, y, h, vb) { return x < vb.maxX && x + this.CARD_W > vb.minX && y < vb.maxY && y + h > vb.minY; }
+
+  // A wire with one endpoint offscreen: draw a short stub from the onscreen port
+  // ending in a label naming the Room / Device it connects to offscreen.
+  OffscreenStub(r, o) {
+    const R = React.createElement;
+    const STUB = 48;
+    const anchorRight = o.fromOn;           // from is an output (right side) -> stub points right
+    const sx = anchorRight ? o.x1 : o.x2;
+    const sy = anchorRight ? o.y1 : o.y2;
+    const offDev = anchorRight ? o.td : o.fd;
+    const ex = anchorRight ? sx + STUB : sx - STUB, ey = sy;
+    const label = `${this.roomName(offDev.room)} · ${offDev.name}`;
+    const w = label.length * 6.1 + 16;
+    const rectX = anchorRight ? ex + 3 : ex - 3 - w;
+    const textX = anchorRight ? ex + 9 : ex - 9;
+    const d = `M${sx},${sy} C${(sx + ex) / 2},${sy} ${(sx + ex) / 2},${ey} ${ex},${ey}`;
+    return R("g", { key: r.id, style: { opacity: o.opacity, transition: "opacity 0.25s" } },
+      R("path", { d, stroke: "transparent", strokeWidth: 14, fill: "none", style: { pointerEvents: "stroke", cursor: "pointer" }, onClick: e => { e.stopPropagation(); this.traceFromRoute(r.id); }, onDoubleClick: e => { e.stopPropagation(); this.removeRoute(r.id); this.setState({ tracedChain: null }); } }),
+      R("path", { d, stroke: o.color, strokeWidth: o.width, fill: "none", strokeDasharray: o.dash, style: { pointerEvents: "none" } }),
+      R("circle", { cx: sx, cy: sy, r: 3, fill: o.color, style: { pointerEvents: "none" } }),
+      R("rect", { x: rectX, y: ey - 10, width: w, height: 20, rx: 5, fill: "#fff", stroke: o.color, strokeWidth: 1, style: { pointerEvents: "none" } }),
+      R("text", { x: textX, y: ey + 3.5, textAnchor: anchorRight ? "start" : "end", fontSize: 10.5, fontWeight: 600, fill: "var(--fg)", style: { pointerEvents: "none" } }, label),
+    );
+  }
+
   WiresSvg() {
     const R = React.createElement;
     const s = this.state; const tc = s.tracedChain; const wp = s.wirePreview;
     // A-03: when a single room/floor is in focus, only its own connections read as active
     const scoped = s.sel.type === "room" || s.sel.type === "floor";
     const scopeIds = scoped ? new Set(this.visibleDevicesFor().map(d => d.id)) : null;
+    const vb = this.viewportCanvasBounds(); // for offscreen-wire stubs
     return R("svg", { style: { position: "absolute", top: 0, left: 0, width: 3000, height: 2400, pointerEvents: "none", overflow: "visible" } },
       s.routes.map(r => {
         const fd = this.deviceById(r.fromDevice), td = this.deviceById(r.toDevice);
@@ -813,6 +947,14 @@ class Component extends DCLogic {
         const color = tracing && inChain ? (hasSig ? col : "var(--danger)") : col;
         const width = tracing && inChain ? 3.5 : 2;
         const dash = tracing && inChain && !hasSig ? "8,4" : "none";
+        // Offscreen handling: if a connected device's card is outside the viewport,
+        // collapse its side of the wire into a short labeled stub instead of a long line.
+        if (vb) {
+          const fromOn = this.rectVisible(fp.x, fp.y, this.cardHeight(fd, s.selectedDev === fd.id), vb);
+          const toOn = this.rectVisible(tp.x, tp.y, this.cardHeight(td, s.selectedDev === td.id), vb);
+          if (!fromOn && !toOn) return null; // both ends offscreen -> nothing to show
+          if (!fromOn || !toOn) return this.OffscreenStub(r, { fromOn, toOn, x1, y1, x2, y2, fd, td, color, opacity, width, dash });
+        }
         const d = `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
         return R("g", { key: r.id, style: { opacity, transition: "opacity 0.25s" } },
           R("path", { d, stroke: "transparent", strokeWidth: 14, fill: "none", style: { pointerEvents: "stroke", cursor: "pointer" }, onClick: e => { e.stopPropagation(); this.traceFromRoute(r.id); }, onDoubleClick: e => { e.stopPropagation(); this.removeRoute(r.id); this.setState({ tracedChain: null }); } }),
@@ -839,7 +981,8 @@ class Component extends DCLogic {
     const s = this.state;
     const pos = s.positions[dev.id] || { x: 0, y: 0 };
     const isSelected = s.selectedDev === dev.id;
-    const showDsp = isSelected && this.isDspCapable(dev);
+    // Inline gain/mute footer: available on DSP-capable devices, but NOT on plain DSP-type nodes.
+    const showDsp = isSelected && this.isDspCapable(dev) && dev.type !== "DSP";
     const h = this.cardHeight(dev, showDsp);
     const hasPorts = dev.inputs.length > 0 || dev.outputs.length > 0;
     const dim = !visibleIds.has(dev.id);
@@ -860,7 +1003,7 @@ class Component extends DCLogic {
       style: { position: "absolute", left: pos.x, top: pos.y, width: this.CARD_W, height: h, background: isOOO ? "#FCF1F0" : "#fff", borderRadius: "var(--radius-lg)", border: `${isSelected || isOOO ? 2 : 1}px solid ${border}`,
         boxShadow: tracedDev ? "0 0 0 3px rgba(67,197,227,0.18), var(--shadow-md)" : "var(--shadow-sm)", cursor: "grab", userSelect: "none", opacity: finalOpacity, zIndex: isSelected ? 20 : tracedDev ? 15 : 10, transition: "opacity 0.25s, box-shadow 0.25s, border-color 0.2s" },
       onPointerDown: e => this.startDeviceDrag(dev.id, e),
-      onClick: e => { if (!this._drag) { e.stopPropagation(); this.traceFromDevice(dev.id); this.setState({ selectedDev: dev.id }); this.track("canvasInteractions", "Select " + dev.name); } },
+      onClick: e => { if (!this._drag) { e.stopPropagation(); if (this.state.tracedChain) { this.clearTrace(); } else { this.traceFromDevice(dev.id); this.setState({ selectedDev: dev.id }); this.track("canvasInteractions", "Select " + dev.name); } } },
       onDoubleClick: () => this.setSel({ id: dev.id, type: "device", name: dev.name, device: dev }) },
       // Header (prototype layout: bare device glyph, name + model, tools column)
       R("div", { style: { display: "flex", alignItems: "center", gap: 9, padding: "0 6px 0 9px", background: isOOO ? "#FBE3E1" : "var(--bg-subtle)", borderRadius: "var(--radius-lg) var(--radius-lg) 0 0", borderBottom: `1px solid ${isOOO ? "#F2C4C0" : "var(--border)"}`, height: this.HEADER_H, boxSizing: "border-box" } },
@@ -871,13 +1014,18 @@ class Component extends DCLogic {
         R("div", { style: { display: "flex", alignItems: "center", gap: 4 } },
           isLive ? R("div", { style: { width: 5, height: 5, borderRadius: "50%", background: "var(--crestron-sky)", animation: "cpPulse 2s infinite" } }) : null,
           R("div", { style: { width: 7, height: 7, borderRadius: "50%", background: isOOO ? "var(--danger)" : dev.status === "Online" ? "var(--success)" : "var(--danger)" } }),
+          // Hide (eye-off): commits the red-X port selection to hidden.
+          this.hasPortSel(dev.id) ? R("button", { onClick: e => { e.stopPropagation(); e.preventDefault(); this.commitHidePorts(dev.id); }, onDoubleClick: e => e.stopPropagation(), onPointerDown: e => e.stopPropagation(), className: "cp-btn", title: "Hide selected ports",
+            style: { width: 20, height: 20, borderRadius: "var(--radius-sm)", border: "1px solid var(--danger)", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, flexShrink: 0 } },
+            this.ic("eye-off", 12, "var(--danger)"))
+          // Unhide (eye): brings hidden ports back as a red-X selection so they can be re-hidden or unselected.
+          : this.hasHiddenPorts(dev.id) ? R("button", { onClick: e => { e.stopPropagation(); e.preventDefault(); this.unhideToSelection(dev.id); }, onDoubleClick: e => e.stopPropagation(), onPointerDown: e => e.stopPropagation(), className: "cp-btn", title: "Show hidden ports",
+            style: { width: 20, height: 20, borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, flexShrink: 0 } },
+            this.ic("eye", 12, "var(--fg-subtle)")) : null,
           // Collapse toggle: hide unconnected ports / show all (prototype expand button)
           R("button", { onClick: e => { e.stopPropagation(); e.preventDefault(); this.toggleCollapse(dev.id); }, onDoubleClick: e => e.stopPropagation(), onPointerDown: e => e.stopPropagation(), className: "cp-btn", title: this.isCollapsed(dev.id) ? "Show all ports" : "Show only connected ports",
             style: { width: 20, height: 20, borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: this.isCollapsed(dev.id) ? "var(--blue-50)" : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, flexShrink: 0, transform: this.isCollapsed(dev.id) ? "rotate(180deg)" : "none", transition: "transform var(--dur-fast)" } },
-            this.ic("chevron", 11, this.isCollapsed(dev.id) ? "var(--crestron-true-blue)" : "var(--fg-subtle)")),
-          R("button", { onClick: e => { e.stopPropagation(); e.preventDefault(); this.toggleOutOfOrder(dev.id); }, onDoubleClick: e => e.stopPropagation(), onPointerDown: e => e.stopPropagation(), className: "cp-btn", title: isOOO ? "Bring back online" : "Take out of order (simulate failure)",
-            style: { width: 20, height: 20, borderRadius: "var(--radius-sm)", border: `1px solid ${isOOO ? "var(--danger)" : "var(--border)"}`, background: isOOO ? "var(--danger)" : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, flexShrink: 0 } },
-            this.ic(isOOO ? "refresh" : "power", 11, isOOO ? "#fff" : "var(--fg-subtle)"))),
+            this.ic("chevron", 11, this.isCollapsed(dev.id) ? "var(--crestron-true-blue)" : "var(--fg-subtle)"))),
       ),
       // A-12 NAX status widget band
       dev.nax ? this.NaxWidget(dev, isOOO, dsp, sigStatus) : null,
@@ -923,6 +1071,7 @@ class Component extends DCLogic {
         R("span", { style: { fontSize: 10, fontStyle: "italic", color: "var(--fg-subtle)" } }, "No active connections"));
     }
     // Prototype port dot: hollow ring in the signal color, fills solid when a route is present.
+    // Clicking a port row marks it for hiding (red X); the header Hide button commits the selection.
     return R("div", { style: { position: "relative", height: rows * this.PORT_H + this.CARD_PAD * 2 } },
       inputs.map((p, i) => {
         const dragging = !!wp;
@@ -930,24 +1079,43 @@ class Component extends DCLogic {
         const incompat = dragging && !compatible;
         const col = this.SIGNAL_COLORS[p.signal] || "var(--crestron-mid-blue)";
         const hasSig = this.portHasSignal(dev.id, p.id, "input");
-        const filteredOut = !this.signalVisible(p.signal); // B-34
-        return R("div", { key: p.id, style: { position: "absolute", left: 0, top: this.CARD_PAD + i * this.PORT_H, height: this.PORT_H, display: "flex", alignItems: "center", paddingLeft: 4, opacity: filteredOut ? 0 : (incompat ? 0.22 : 1), pointerEvents: filteredOut ? "none" : "auto", transition: "opacity 0.15s" } },
+        const sel = this.isPortSel(dev.id, "input", p.id);
+        return R("div", { key: p.id,
+          onPointerDown: e => e.stopPropagation(),
+          onClick: e => { e.stopPropagation(); this.togglePortSel(dev.id, "input", p.id); },
+          onMouseEnter: e => { if (!sel) e.currentTarget.style.background = "rgba(214,44,44,0.08)"; },
+          onMouseLeave: e => { e.currentTarget.style.background = sel ? "rgba(214,44,44,0.10)" : "transparent"; },
+          style: { position: "absolute", left: 0, width: "58%", top: this.CARD_PAD + i * this.PORT_H, height: this.PORT_H, display: "flex", alignItems: "center", paddingLeft: 4, cursor: "pointer", borderRadius: "var(--radius-sm)", background: sel ? "rgba(214,44,44,0.10)" : "transparent", opacity: incompat ? 0.22 : 1, transition: "background 0.12s" } },
           R("div", { "data-port-dev": dev.id, "data-port-id": p.id, "data-port-type": "input",
             style: { width: compatible ? 13 : 10, height: compatible ? 13 : 10, borderRadius: "50%", background: hasSig ? col : "#fff", border: `2px solid ${col}`, cursor: "pointer", marginLeft: -5, flexShrink: 0, zIndex: 30, transition: "all 0.15s",
               boxShadow: compatible ? `0 0 0 2px ${col}, 0 0 8px ${col}` : "none", animation: hasSig && !dragging ? "cpRing 2.4s infinite" : "none" } }),
-          R("span", { style: { fontSize: 10, color: hasSig ? "var(--fg)" : "var(--fg-subtle)", fontWeight: hasSig ? 700 : 400, marginLeft: 7, whiteSpace: "nowrap", pointerEvents: "none" } }, p.label));
+          R("span", { style: { fontSize: 10, color: hasSig ? "var(--fg)" : "var(--fg-subtle)", fontWeight: hasSig ? 700 : 400, marginLeft: 7, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", pointerEvents: "none" } }, p.label),
+          sel ? this.portXBadge("left") : null);
       }),
       outputs.map((p, i) => {
         const col = this.SIGNAL_COLORS[p.signal] || "var(--crestron-mid-blue)";
         const hasSig = this.portHasSignal(dev.id, p.id, "output");
-        const filteredOut = !this.signalVisible(p.signal); // B-34
-        return R("div", { key: p.id, style: { position: "absolute", right: 0, top: this.CARD_PAD + i * this.PORT_H, height: this.PORT_H, display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 4, opacity: filteredOut ? 0 : 1, pointerEvents: filteredOut ? "none" : "auto", transition: "opacity 0.15s" } },
-          R("span", { style: { fontSize: 10, color: hasSig ? "var(--fg)" : "var(--fg-subtle)", fontWeight: hasSig ? 700 : 400, marginRight: 7, whiteSpace: "nowrap", pointerEvents: "none" } }, p.label),
+        const sel = this.isPortSel(dev.id, "output", p.id);
+        return R("div", { key: p.id,
+          onPointerDown: e => e.stopPropagation(),
+          onClick: e => { e.stopPropagation(); this.togglePortSel(dev.id, "output", p.id); },
+          onMouseEnter: e => { if (!sel) e.currentTarget.style.background = "rgba(214,44,44,0.08)"; },
+          onMouseLeave: e => { e.currentTarget.style.background = sel ? "rgba(214,44,44,0.10)" : "transparent"; },
+          style: { position: "absolute", right: 0, width: "58%", top: this.CARD_PAD + i * this.PORT_H, height: this.PORT_H, display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 4, cursor: "pointer", borderRadius: "var(--radius-sm)", background: sel ? "rgba(214,44,44,0.10)" : "transparent", transition: "background 0.12s" } },
+          R("span", { style: { fontSize: 10, color: hasSig ? "var(--fg)" : "var(--fg-subtle)", fontWeight: hasSig ? 700 : 400, marginRight: 7, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", pointerEvents: "none" } }, p.label),
           R("div", { "data-port-dev": dev.id, "data-port-id": p.id, "data-port-type": "output",
             style: { width: 10, height: 10, borderRadius: "50%", background: hasSig ? col : "#fff", border: `2px solid ${col}`, cursor: "crosshair", marginRight: -5, flexShrink: 0, zIndex: 30,
-              animation: hasSig ? "cpRing 2.4s infinite" : "none" }, onPointerDown: e => this.startWireDrag(dev.id, p.id, e) }));
+              animation: hasSig ? "cpRing 2.4s infinite" : "none" }, onClick: e => e.stopPropagation(), onPointerDown: e => this.startWireDrag(dev.id, p.id, e) }),
+          sel ? this.portXBadge("right") : null);
       }),
     );
+  }
+
+  // Small red X marker shown on a port that is selected to be hidden.
+  portXBadge(side) {
+    const R = React.createElement;
+    return R("div", { style: { position: "absolute", top: "50%", [side]: -7, transform: "translateY(-50%)", width: 15, height: 15, borderRadius: "50%", background: "var(--danger)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 40, pointerEvents: "none", boxShadow: "0 0 0 2px #fff" } },
+      this.ic("x", 9, "#fff", 3));
   }
 
   // A-16 inline DSP controls
@@ -972,9 +1140,14 @@ class Component extends DCLogic {
     const R = React.createElement;
     const s = this.state;
     const devices = s.sel.type === "system" ? this.DEVICES : s.sel.type === "floor" ? this.devicesInFloor(s.sel.id) : s.sel.type === "room" ? this.devicesInRoom(s.sel.id) : this.DEVICES;
-    const sources = devices.flatMap(d => d.outputs.map(p => ({ devId: d.id, devName: d.name, portId: p.id, portLabel: p.label, signal: p.signal })));
-    const dests = devices.flatMap(d => d.inputs.map(p => ({ devId: d.id, devName: d.name, portId: p.id, portLabel: p.label, signal: p.signal })));
-    if (!sources.length || !dests.length) return R("div", { style: { flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--fg-muted)", fontSize: 14 } }, "No routable ports in this view");
+    // Ports hidden in the Routing Map (individual hide) are excluded here too, keeping the
+    // Matrix and canvas in sync \u2014 a hidden port is not a row or column.
+    const sources = devices.flatMap(d => d.outputs.filter(p => !this.isPortHidden(d.id, "output", p.id)).map(p => ({ devId: d.id, devName: d.name, portId: p.id, portLabel: p.label, signal: p.signal })));
+    const dests = devices.flatMap(d => d.inputs.filter(p => !this.isPortHidden(d.id, "input", p.id)).map(p => ({ devId: d.id, devName: d.name, portId: p.id, portLabel: p.label, signal: p.signal })));
+    const hiddenCount = devices.reduce((n, d) => n + (s.hiddenPorts[d.id] || []).length, 0);
+    if (!sources.length || !dests.length) return R("div", { style: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, color: "var(--fg-muted)", fontSize: 14 } },
+      "No routable ports in this view",
+      hiddenCount ? R("button", { onClick: () => this.unhideInViewToSelection(devices), className: "cp-btn", style: { display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "#fff", color: "var(--crestron-true-blue)", fontSize: 12, fontWeight: 600, cursor: "pointer" } }, this.ic("eye", 13, "var(--crestron-true-blue)"), `Show ${hiddenCount} hidden port${hiddenCount > 1 ? "s" : ""}`) : null);
     const isRouted = (sd, sp, dd, dp) => s.routes.some(r => r.fromDevice === sd && r.fromPort === sp && r.toDevice === dd && r.toPort === dp);
     const toggleCell = (src, dst) => {
       if (src.devId === dst.devId) return;
@@ -985,15 +1158,31 @@ class Component extends DCLogic {
     const CELL = 30, LABEL_W = 168, HDR_H = 124;
     const hr = this._gridHoverR ?? -1, hc = this._gridHoverC ?? -1;
     const setHover = (r, c) => { this._gridHoverR = r; this._gridHoverC = c; this.forceUpdate(); };
+    // Label hover is tracked separately from the cross highlight so the hide eye only appears
+    // when hovering the device-name cell (row label / column header), not the intersection cells.
+    const lr = this._gridLabelR ?? -1, lc = this._gridLabelC ?? -1;
+    const setLabelHover = (r, c) => { this._gridLabelR = r; this._gridLabelC = c; this.forceUpdate(); };
+    // Hide affordance = eye-with-slash, revealed on device-name-cell hover.
+    const hideBtn = (onClick, title) => R("button", { onClick: e => { e.stopPropagation(); onClick(); }, className: "cp-btn", title,
+      style: { width: 18, height: 18, borderRadius: "var(--radius-sm)", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, flexShrink: 0 } }, this.ic("eye-off", 13, "var(--danger)"));
+    // Pending (re-selected) port: a persistent eye that stays shown to indicate the port is still
+    // marked hidden; clicking it unhides the port (removes the pending mark, keeps it visible).
+    const pendingEye = (onClick, title) => R("button", { onClick: e => { e.stopPropagation(); onClick(); }, className: "cp-btn", title,
+      style: { width: 18, height: 18, borderRadius: "var(--radius-sm)", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, flexShrink: 0 } }, this.ic("eye", 13, "var(--danger)"));
     return R("div", { style: { flex: 1, overflow: "auto", background: "var(--bg-muted)" } },
       R("div", { style: { display: "inline-block", minWidth: "100%" } },
         R("div", { style: { display: "flex" } },
-          R("div", { style: { width: LABEL_W, height: HDR_H, flexShrink: 0, background: "var(--bg-subtle)", borderRight: "1px solid var(--border-strong)", borderBottom: "1px solid var(--border-strong)", display: "flex", alignItems: "flex-end", padding: "0 10px 8px", fontSize: 10, fontWeight: 700, color: "var(--fg-subtle)", textTransform: "uppercase", letterSpacing: "0.06em" } }, "Source \u2192 Dest"),
-          dests.map((d, ci) => R("div", { key: "h" + ci, style: { width: CELL, height: HDR_H, flexShrink: 0, background: hc === ci ? "var(--blue-50)" : "var(--bg-subtle)", borderRight: "1px solid var(--border)", borderBottom: "1px solid var(--border-strong)", display: "flex", alignItems: "flex-end", justifyContent: "center", paddingBottom: 5 } },
-            R("div", { style: { writingMode: "vertical-rl", transform: "rotate(180deg)", fontSize: 9, fontWeight: 500, color: "var(--fg)", overflow: "hidden", maxHeight: HDR_H - 10, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4 } }, R("span", { style: { width: 6, height: 6, borderRadius: "50%", background: this.SIGNAL_COLORS[d.signal] } }), `${d.devName}/${d.portLabel}`)))),
+          R("div", { style: { width: LABEL_W, height: HDR_H, flexShrink: 0, background: "var(--bg-subtle)", borderRight: "1px solid var(--border-strong)", borderBottom: "1px solid var(--border-strong)", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "space-between", padding: "8px 10px" } },
+            hiddenCount ? R("button", { onClick: () => this.unhideInViewToSelection(devices), className: "cp-btn", title: "Show all hidden ports", style: { display: "flex", alignItems: "center", gap: 5, padding: "3px 8px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "#fff", color: "var(--crestron-true-blue)", fontSize: 10, fontWeight: 700, cursor: "pointer" } }, this.ic("eye", 11, "var(--crestron-true-blue)"), `Show ${hiddenCount} hidden`) : R("span", null),
+            R("span", { style: { fontSize: 10, fontWeight: 700, color: "var(--fg-subtle)", textTransform: "uppercase", letterSpacing: "0.06em" } }, "Source \u2192 Dest")),
+          dests.map((d, ci) => { const pending = this.isPortSel(d.devId, "input", d.portId); return R("div", { key: "h" + ci, onMouseEnter: () => { setHover(-1, ci); setLabelHover(-1, ci); }, onMouseLeave: () => { setHover(-1, -1); setLabelHover(-1, -1); }, style: { width: CELL, height: HDR_H, flexShrink: 0, background: pending ? "rgba(214,44,44,0.10)" : hc === ci ? "var(--blue-50)" : "var(--bg-subtle)", borderRight: "1px solid var(--border)", borderBottom: "1px solid var(--border-strong)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", paddingBottom: 5, gap: 4 } },
+            R("div", { style: { height: 18, display: "flex", alignItems: "center" } }, pending ? pendingEye(() => this.togglePortSel(d.devId, "input", d.portId), "Re-selected (was hidden) — click to unhide") : lc === ci ? hideBtn(() => this.hidePort(d.devId, "input", d.portId), "Hide this destination") : null),
+            R("div", { style: { writingMode: "vertical-rl", transform: "rotate(180deg)", fontSize: 9, fontWeight: 500, color: "var(--fg)", overflow: "hidden", maxHeight: HDR_H - 32, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4 } }, R("span", { style: { width: 6, height: 6, borderRadius: "50%", background: this.SIGNAL_COLORS[d.signal] } }), `${d.devName}/${d.portLabel}`)); })),
         sources.map((src, ri) => R("div", { key: "r" + ri, style: { display: "flex" } },
-          R("div", { style: { width: LABEL_W, height: CELL, flexShrink: 0, display: "flex", alignItems: "center", padding: "0 10px", borderRight: "1px solid var(--border-strong)", borderBottom: "1px solid var(--border)", fontSize: 10, color: "var(--fg)", background: hr === ri ? "var(--blue-50)" : ri % 2 === 0 ? "#fff" : "var(--neutral-50)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", gap: 6 } },
-            R("div", { style: { width: 6, height: 6, borderRadius: "50%", background: this.SIGNAL_COLORS[src.signal], flexShrink: 0 } }), `${src.devName}/${src.portLabel}`),
+          R("div", { onMouseEnter: () => { setHover(ri, -1); setLabelHover(ri, -1); }, onMouseLeave: () => { setHover(-1, -1); setLabelHover(-1, -1); }, style: { width: LABEL_W, height: CELL, flexShrink: 0, display: "flex", alignItems: "center", padding: "0 10px", borderRight: "1px solid var(--border-strong)", borderBottom: "1px solid var(--border)", fontSize: 10, color: "var(--fg)", background: this.isPortSel(src.devId, "output", src.portId) ? "rgba(214,44,44,0.10)" : hr === ri ? "var(--blue-50)" : ri % 2 === 0 ? "#fff" : "var(--neutral-50)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", gap: 6 } },
+            R("div", { style: { width: 6, height: 6, borderRadius: "50%", background: this.SIGNAL_COLORS[src.signal], flexShrink: 0 } }),
+            R("span", { style: { flex: 1, overflow: "hidden", textOverflow: "ellipsis" } }, `${src.devName}/${src.portLabel}`),
+            this.isPortSel(src.devId, "output", src.portId) ? pendingEye(() => this.togglePortSel(src.devId, "output", src.portId), "Re-selected (was hidden) — click to unhide") : lr === ri ? hideBtn(() => this.hidePort(src.devId, "output", src.portId), "Hide this source") : null),
           dests.map((dst, ci) => {
             const routed = isRouted(src.devId, src.portId, dst.devId, dst.portId);
             const disabled = src.devId === dst.devId || !this.signalsCompatible(src.signal, dst.signal);

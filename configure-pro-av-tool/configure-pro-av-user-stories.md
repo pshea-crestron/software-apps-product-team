@@ -19,9 +19,9 @@
 |---|---|---|---|
 | Summary | + Deliver the primary zoomable workspace where installers and designers see, arrange, and interact with their full AV system through node-based device representation, signal connections, and room/system switching. <br>+ View and create routes in a matrix-based routing grid for high-density channel routing. <br>+ Enable core route creation with drag-to-connect routing, constraint validation, and bidirectional sync between the canvas and routing grid. <br>+ Provide signal tracing, device status widgets, and core troubleshooting instrumentation for the initial onsite commissioning experience. <br>+ Give installers quick-access gain, mute, and delay adjustments directly from within the advanced device view on the canvas. | + Build on the routing foundation with canvas labeling, port visibility controls, and schematic refinement tools for more polished system designs. <br>+ Surface real-time signal metering on canvas connections to confirm what's actually active during live operation, plus guided signal-break detection.| + Deliver structured diagnostic flows, sequential DSP path inspection, and proactive error surfacing to speed up complex issue resolution. |
 |---|---|---|---|
-| **1. Canvas & Visual Workspace** | **A-01:** Render live devices as visual nodes so installers can see the full system at a glance<br><br>**A-02:** Persist canvas layout across sessions so context is never lost<br><br>**A-03:** Switch between rooms without accidentally cross-routing systems<br><br>**A-27:** Instrument canvas workspace usage to measure whether the canvas is becoming the primary configuration surface | — | — |
+| **1. Canvas & Visual Workspace** | **A-01:** Render live devices as visual nodes so installers can see the full system at a glance<br><br>**A-02:** Persist canvas layout across sessions so context is never lost<br><br>**A-03:** Switch between rooms without accidentally cross-routing systems<br><br>**A-27:** Instrument canvas workspace usage to measure whether the canvas is becoming the primary configuration surface<br><br>**A-35:** Snap devices and rooms to a grid while dragging so the canvas stays cleanly aligned | — | — |
 | **2. Routing & Signal Flow** | **A-05:** Create a route by connecting device nodes on the canvas<br><br>**A-06:** See canvas and routing grid stay in sync so routing can be trusted<br><br>**A-07:** Prevent invalid routes from being created to avoid bad configurations<br><br>**A-28:** Instrument routing interactions to measure drag-drop success rate and routing error frequency<br><br>**A-34:** View and create routes in a matrix-based routing grid for high-density channel routing | — | — |
-| **3. Advanced Routing & Canvas Customization** | — | **B-08:** Add a text tag to label any source or destination point on the canvas<br><br>**B-09:** Customize which inputs and outputs are visible on a device node to reduce canvas clutter<br><br>**B-34:** Filter the canvas by signal type from the legend so only relevant ports and wires are shown | — |
+| **3. Advanced Routing & Canvas Customization** | — | **B-08:** Add a text tag to label any source or destination point on the canvas<br><br>**B-09:** Customize which inputs and outputs are visible on a device node to reduce canvas clutter<br><br>**B-34:** Filter the canvas by signal type from the legend so only relevant ports and wires are shown<br><br>**B-36:** Resize a device node automatically when its ports are hidden so no empty space remains<br><br>**B-37:** Show a short labeled stub for wires that lead to off-canvas devices so connections stay legible<br><br>**B-38:** Hide a source row or destination column directly from the Matrix view, synced to the Routing Map | — |
 | **4. Basic Troubleshooting & Live Monitoring** | **A-10:** Trace a signal path end-to-end to quickly find where it breaks<br><br>**A-12:** See a real-time status widget for each NAX device to monitor crucial device health at a glance<br><br>**A-29:** Instrument troubleshooting workflows to measure time-to-diagnosis and external tool switching | — | — |
 | **5. Live Meters & Signal Presence** | — | **B-11:** See live meters and device status directly on canvas nodes<br><br>**B-13:** Follow a structured "find where signal breaks" flow to diagnose audio issues confidently | — |
 | **6. Advanced Troubleshooting** | — | — | **C-14:** View the sequential DSP blocks for any signal path and edit any block inline<br><br>**C-15:** Surface error states and suspicious device conditions proactively on the canvas |
@@ -112,6 +112,35 @@
 - **and Given:** Telemetry instrumentation is in place for the canvas surface
 - **When:** The product team reviews usage data
 - **Then:** The data includes: percentage of routing interactions initiated on the canvas vs. the routing grid vs. external tools; canvas session frequency per user; and layout persistence success rate — all queryable per system and per time period
+
+---
+
+#### User Story A-35
+- **Summary:** Snap devices and rooms to a grid while dragging so the canvas stays cleanly aligned
+
+##### Use Case:
+- **As an** installer arranging device nodes and room groups on the canvas
+- **I want to** have both device nodes and room groups snap to a shared alignment grid as I drag them
+- **so that** I can line everything up neatly without fiddling for pixel-perfect placement
+
+##### Acceptance Criteria:
+- **Scenario:** Installer drags a device node across the canvas
+- **Given:** I have a system open on the canvas with at least one device node
+- **and Given:** The canvas alignment grid is active
+- **When:** I drag a device node and release it
+- **Then:** The node's position snaps to the nearest grid increment on both axes, aligning with other nodes placed on the same grid
+
+- **Scenario:** Installer drags a room group across the canvas
+- **Given:** I have a system on the canvas with a room group containing one or more devices
+- **and Given:** The canvas alignment grid is active
+- **When:** I drag the room group by its label
+- **Then:** The room group snaps to the same grid increments as devices, the devices inside retain their relative positions, and the group aligns with other rooms and nodes on the grid
+
+- **Scenario:** Installer drags a room group toward another room
+- **Given:** I have a system on the canvas with two or more room groups
+- **and Given:** I am dragging one room group
+- **When:** The dragged room's bounds would overlap another room's bounds
+- **Then:** The move is prevented at that position so the two rooms never overlap, and the room can still be moved freely into any non-overlapping position
 
 ---
 
@@ -247,11 +276,24 @@
 - **so that** I can focus the canvas on the connections that matter for this system without being overwhelmed by unused ports
 
 ##### Acceptance Criteria:
-- **Scenario:** Installer hides unused ports on a device node
+- **Scenario:** Installer marks individual ports and hides them from a device node
 - **Given:** I have a device node on the canvas with more inputs and outputs than are used in the current system
-- **and Given:** I open the node's view options
-- **When:** I deselect specific inputs or outputs from the visible port list
-- **Then:** The deselected ports are hidden from the node on the canvas, the node resizes accordingly, and no existing routes to visible ports are affected
+- **and Given:** I hover a port and click it to mark it for hiding, which shows a red "X" on that port
+- **and Given:** An eye-with-slash (hide) icon appears on the device header once at least one port is marked, and clicking a marked port again unmarks it
+- **When:** I finish marking the ports I want to remove and select the eye-with-slash (hide) icon
+- **Then:** The marked ports are hidden from the node on the canvas, the node resizes accordingly, and no existing routes to still-visible ports are affected
+
+- **Scenario:** Installer unhides ports and can re-hide or refine the selection
+- **Given:** I have a device node with one or more individually hidden ports
+- **and Given:** An eye (unhide) icon is shown on the device header
+- **When:** I select the eye (unhide) icon
+- **Then:** All hidden ports reappear on the node in the marked-for-hiding state — highlighted red with the red "X" — the eye icon switches back to the eye-with-slash (hide) icon, and from there I can select the hide icon to re-hide the same ports or click individual ports to unmark the ones I want to keep visible; no routes are changed by unhiding
+
+- **Scenario:** Ports hidden in the Routing Map are excluded from the Matrix view
+- **Given:** I have hidden one or more ports on a device in the Routing Map
+- **and Given:** I switch to the Matrix (routing grid) view
+- **When:** The Matrix renders
+- **Then:** The hidden output ports do not appear as rows and the hidden input ports do not appear as columns, matching exactly what is visible on the canvas
 
 ---
 
@@ -284,6 +326,69 @@
 - **Given:** I have hidden one or more signal types via the legend filter
 - **When:** I view or later re-show the hidden types
 - **Then:** No routes are created, removed, or modified by filtering — the filter only affects what is displayed, and hidden ports remain valid endpoints for their existing connections
+
+---
+
+#### User Story B-36
+- **Summary:** Resize a device node automatically when its ports are hidden so no empty space remains
+
+##### Use Case:
+- **As an** installer working on a canvas with partially-hidden device nodes
+- **I want to** have a node shrink to fit only its visible ports
+- **so that** hidden ports don't leave dead space that wastes canvas real estate and breaks visual alignment
+
+##### Acceptance Criteria:
+- **Scenario:** Installer hides ports via individual selection or the signal-type filter
+- **Given:** I have a device node on the canvas with several visible ports
+- **and Given:** I hide one or more ports — individually (B-09) or by toggling a signal type off in the legend filter (B-34)
+- **When:** The ports are hidden
+- **Then:** The node's height reduces to fit only the remaining visible ports, existing wires stay connected to their unchanged port positions, and the node returns to full size when the ports are shown again
+
+---
+
+#### User Story B-37
+- **Summary:** Show a short labeled stub for wires that lead to off-canvas devices so connections stay legible
+
+##### Use Case:
+- **As an** installer zoomed or panned into part of a large system
+- **I want to** see wires that leave the visible area collapse into a short stub labeled with the Room/Device they connect to
+- **so that** I can understand where a connection goes without following a long line into empty space or losing track of the destination
+
+##### Acceptance Criteria:
+- **Scenario:** Installer pans so that a connected device moves off-screen
+- **Given:** I have a routed system open on the canvas
+- **and Given:** A wire connects a visible device to a device whose node is currently outside the viewport
+- **When:** The canvas renders at the current pan/zoom
+- **Then:** The wire is drawn as a short stub from the on-screen port ending in a label showing the off-screen device's Room and Device name, and the stub remains selectable to trace the path the same as a full wire
+
+---
+
+#### User Story B-38
+- **Summary:** Hide a source row or destination column directly from the Matrix view, synced to the Routing Map
+
+##### Use Case:
+- **As an** installer building routes primarily in the Matrix view
+- **I want to** hide a source (row) or destination (column) without leaving the grid
+- **so that** I can reduce a large matrix to only the ports I care about, and have that choice carry over to the canvas
+
+##### Acceptance Criteria:
+- **Scenario:** Installer hides a row and a column from the Matrix
+- **Given:** I have a system open in the Matrix view with multiple source rows and destination columns
+- **and Given:** I hover the device-name cell of a row label or column header, which reveals an eye-with-slash (hide) icon — the icon is not shown until I hover that device-name cell
+- **When:** I select the eye-with-slash (hide) icon on that row or column
+- **Then:** The row or column is removed from the Matrix, a control to restore hidden ports remains available, and the same port is hidden on the Routing Map canvas — with no routes created, removed, or modified by the hide action
+
+- **Scenario:** Installer unhides Matrix ports, mirroring the canvas re-select behavior
+- **Given:** I have one or more ports hidden while in the Matrix view
+- **and Given:** A "Show hidden" restore control is available
+- **When:** I select the restore control
+- **Then:** The hidden ports reappear as rows/columns in the Matrix and are returned to the marked-for-hiding (pending) state, so that on the Routing Map canvas they show highlighted red with the red "X" — ready to be re-hidden or individually unmarked — with no routes changed
+
+- **Scenario:** Re-selected (pending) ports are indicated in the Matrix and can be unhidden
+- **Given:** I have re-selected (pending) ports showing in the Matrix after a "Show hidden" action
+- **and Given:** Each pending row label and column header shows a persistent eye icon (and a red-tinted device-name cell) indicating the port is still marked hidden
+- **When:** I click the eye icon on a pending row or column
+- **Then:** That port is unhidden — its pending mark is removed so it stays visible as a normal row/column — and the same change is reflected on the Routing Map canvas, with no routes created, removed, or modified
 
 ---
 
