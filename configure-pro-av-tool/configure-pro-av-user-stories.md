@@ -21,7 +21,7 @@
 |---|---|---|---|
 | **1. Canvas & Visual Workspace** | **A-01:** Render live devices as visual nodes so installers can see the full system at a glance<br><br>**A-02:** Persist canvas layout across sessions so context is never lost<br><br>**A-03:** Switch between rooms without accidentally cross-routing systems<br><br>**A-27:** Instrument canvas workspace usage to measure whether the canvas is becoming the primary configuration surface<br><br>**A-35:** Snap devices and rooms to a grid while dragging so the canvas stays cleanly aligned | — | — |
 | **2. Routing & Signal Flow** | **A-05:** Create a route by connecting device nodes on the canvas<br><br>**A-06:** See canvas and routing grid stay in sync so routing can be trusted<br><br>**A-07:** Prevent invalid routes from being created to avoid bad configurations<br><br>**A-28:** Instrument routing interactions to measure drag-drop success rate and routing error frequency<br><br>**A-34:** View and create routes in a matrix-based routing grid for high-density channel routing | — | — |
-| **3. Advanced Routing & Canvas Customization** | — | **B-08:** Add a text tag to label any source or destination point on the canvas<br><br>**B-09:** Customize which inputs and outputs are visible on a device node to reduce canvas clutter<br><br>**B-34:** Filter the canvas by signal type from the legend so only relevant ports and wires are shown<br><br>**B-36:** Resize a device node automatically when its ports are hidden so no empty space remains<br><br>**B-37:** Show a short labeled stub for wires that lead to off-canvas devices so connections stay legible<br><br>**B-38:** Hide a source row or destination column directly from the Matrix view, synced to the Routing Map | — |
+| **3. Advanced Routing & Canvas Customization** | — | **B-08:** Add a text tag to label any source or destination point on the canvas<br><br>**B-09:** Customize which inputs and outputs are visible on a device node to reduce canvas clutter<br><br>**B-34:** Filter the canvas and Matrix by signal type from a consistent legend so only relevant ports and wires are shown<br><br>**B-36:** Resize a device node automatically when its ports are hidden so no empty space remains<br><br>**B-37:** Show a short labeled stub for wires that lead to off-canvas devices so connections stay legible<br><br>**B-38:** Hide a source row or destination column directly from the Matrix view, synced to the Routing Map | — |
 | **4. Basic Troubleshooting & Live Monitoring** | **A-10:** Trace a signal path end-to-end to quickly find where it breaks<br><br>**A-12:** See a real-time status widget for each NAX device to monitor crucial device health at a glance<br><br>**A-29:** Instrument troubleshooting workflows to measure time-to-diagnosis and external tool switching | — | — |
 | **5. Live Meters & Signal Presence** | — | **B-11:** See live meters and device status directly on canvas nodes<br><br>**B-13:** Follow a structured "find where signal breaks" flow to diagnose audio issues confidently | — |
 | **6. Advanced Troubleshooting** | — | — | **C-14:** View the sequential DSP blocks for any signal path and edit any block inline<br><br>**C-15:** Surface error states and suspicious device conditions proactively on the canvas |
@@ -204,6 +204,17 @@
 - **When:** I hover over an incompatible input port on another device
 - **Then:** The incompatible port is visually indicated as invalid, the connection is not created, and only compatible ports remain highlighted as valid drop targets
 
+- **Scenario:** Installer views a non-routeable (Bluetooth) port on a device node
+- **Given:** I have a device on the canvas that exposes a Bluetooth input or output port
+- **and Given:** Bluetooth is a non-routeable signal type
+- **When:** The device node renders
+- **Then:** The Bluetooth port is still shown on the node for completeness but is rendered greyed-out (filled grey with a muted label) to indicate it cannot participate in routing
+
+- **Scenario:** Installer attempts to route to or from a Bluetooth port
+- **Given:** I have a device with a Bluetooth port on the canvas, in the Matrix, or in the device routing panel
+- **When:** I try to drag a wire from the Bluetooth output, drop a wire onto the Bluetooth input, select its Matrix intersection, or pick it from a connection dropdown
+- **Then:** No route is created — a Bluetooth port is never offered as a valid connection option in any view, and its greyed-out state signals this consistently across the canvas and Matrix
+
 ---
 
 #### User Story A-28
@@ -298,11 +309,11 @@
 ---
 
 #### User Story B-34
-- **Summary:** Filter the canvas by signal type from the legend so only relevant ports and wires are shown
+- **Summary:** Filter the canvas and Matrix by signal type from a consistent legend so only relevant ports and wires are shown
 
 ##### Use Case:
 - **As an** installer working on a mixed-signal system (HDMI, AoIP, analog, Bluetooth, etc.)
-- **I want to** toggle signal types on and off directly from the canvas legend/key
+- **I want to** toggle signal types on and off directly from an interactive legend/key that looks and behaves the same in both the Routing Map and the Matrix
 - **so that** I can focus on one signal domain at a time — for example showing only HDMI ports and wires — without visual noise from unrelated signal types
 
 ##### Acceptance Criteria:
@@ -326,6 +337,27 @@
 - **Given:** I have hidden one or more signal types via the legend filter
 - **When:** I view or later re-show the hidden types
 - **Then:** No routes are created, removed, or modified by filtering — the filter only affects what is displayed, and hidden ports remain valid endpoints for their existing connections
+
+- **Scenario:** Installer opens the Matrix view and sees the same legend as the Routing Map
+- **Given:** I have a mixed-signal system open
+- **and Given:** I switch from the Routing Map to the Matrix (routing grid) view
+- **When:** The Matrix renders
+- **Then:** The same interactive signal-type legend is shown, using the identical small colored circle symbols that represent ports on the device nodes, so the two views read consistently
+
+- **Scenario:** Legend symbols match the device port style
+- **Given:** The legend is displayed on either the Routing Map or the Matrix
+- **When:** I look at each signal type in the legend
+- **Then:** Each entry is marked by the same small colored circle used for that signal type's ports on device nodes (not a differing swatch or line style), reinforcing a single visual language across the app
+
+- **Scenario:** Signal-type filter selection is shared across the Routing Map and Matrix
+- **Given:** I have unselected one or more signal types from the legend in one view
+- **When:** I switch to the other view
+- **Then:** The same signal types remain hidden — hidden ports do not appear as canvas ports/wires, nor as Matrix rows/columns — keeping the filter state consistent between the two views
+
+- **Scenario:** Non-routeable (Bluetooth) signal type is represented in the legend
+- **Given:** The system includes Bluetooth ports
+- **When:** The legend renders in either view
+- **Then:** Bluetooth appears with a greyed-out circle and a "no routing" indication, making clear it is shown for reference only and cannot be routed (see A-07)
 
 ---
 
