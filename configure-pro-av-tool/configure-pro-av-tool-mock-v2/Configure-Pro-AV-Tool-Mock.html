@@ -76,8 +76,8 @@ class Component extends DCLogic {
       { id: "fr-sb", name: "Sonos Soundbar", model: "Sonos Arc", manufacturer: "Sonos", room: "family-room", type: "Speaker", status: "Online", source: "discovered",
         inputs: [inp("hdmi","HDMI (eARC)","hdmi")],
         outputs: [out("aoip-o1l","AoIP Out 1L","aoip")] },
-      { id: "lr-appletv", name: "Apple TV", model: "Apple TV 4K (3rd Gen)", manufacturer: "Apple", room: "living-room", type: "Media Player", status: "Online", source: "discovered",
-        inputs: [], outputs: [out("hdmi-out","HDMI Out","hdmi"), out("bt-l","Bluetooth Out L","bluetooth"), out("bt-r","Bluetooth Out R","bluetooth")] },
+      { id: "lr-appletv", name: "Apple TV", model: "Apple TV 4K (3rd Gen)", manufacturer: "Apple", room: "equipment-room", type: "Media Player", status: "Online", source: "discovered",
+        inputs: [], outputs: [out("hdmi-out","HDMI Out (eARC)","hdmi"), out("bt-l","Bluetooth Out L","bluetooth"), out("bt-r","Bluetooth Out R","bluetooth")] },
       { id: "lr-tv", name: "LG TV", model: "LG OLED77C3", manufacturer: "LG", room: "living-room", type: "Display", status: "Online", source: "discovered",
         inputs: [inp("hdmi1","HDMI 1","hdmi"), inp("hdmi2","HDMI 2","hdmi"), inp("hdmi3","HDMI 3 (eARC)","hdmi"), inp("hdmi4","HDMI 4","hdmi")],
         outputs: [out("rv1","Room Video 1","hdmi"), out("ra1","Room Audio 1","analog_audio"), out("opt","Optical Out","digital_audio")] },
@@ -86,6 +86,9 @@ class Component extends DCLogic {
                  inp("aoip-i1l","AoIP In 1L","aoip"), inp("aoip-i1r","AoIP In 1R","aoip"), inp("aoip-i2l","AoIP In 2L","aoip"), inp("aoip-i2r","AoIP In 2R","aoip")],
         outputs: [out("aout-l","Analog Line Out L","analog_audio"), out("aout-r","Analog Line Out R","analog_audio"), out("usb-l","USB Out L","digital_audio"), out("usb-r","USB Out R","digital_audio"),
                   out("aoip-o1l","AoIP Out 1L","aoip"), out("aoip-o1r","AoIP Out 1R","aoip"), out("aoip-o2l","AoIP Out 2L","aoip"), out("aoip-o2r","AoIP Out 2R","aoip")] },
+      { id: "dm-nvx-364", name: "DM-NVX-384", model: "DM-NVX-384", manufacturer: "Crestron", room: "equipment-room", type: "VIDEO-DISTRIBUTION", status: "Online", nax: false, source: "discovered",
+        inputs: [inp("hdmi1","HDMI1","hdmi"), inp("hdmi2","HDMI2 (eARC)","hdmi")],
+        outputs: [out("hdmi","HDMI (eARC)","hdmi"), out("aout1","Analog Line Out 1","analog_audio"), out("aoip-o1l","AoIP Out 1L","aoip"), out("aoip-o1r","AoIP Out 1R","aoip")] },
     ];
   })();
 
@@ -930,9 +933,25 @@ class Component extends DCLogic {
     return R("g", { key: r.id, style: { opacity: o.opacity, transition: "opacity 0.25s" } },
       R("path", { d, stroke: "transparent", strokeWidth: 14, fill: "none", style: { pointerEvents: "stroke", cursor: "pointer" }, onClick: e => { e.stopPropagation(); this.traceFromRoute(r.id); }, onDoubleClick: e => { e.stopPropagation(); this.removeRoute(r.id); this.setState({ tracedChain: null }); } }),
       R("path", { d, stroke: o.color, strokeWidth: o.width, fill: "none", strokeDasharray: o.dash, style: { pointerEvents: "none" } }),
+      o.flowing ? this.FlowBubble(r.id + "-stub", d, o.color, Math.hypot(ex - sx, ey - sy)) : null,
       R("circle", { cx: sx, cy: sy, r: 3, fill: o.color, style: { pointerEvents: "none" } }),
       R("rect", { x: rectX, y: ey - 10, width: w, height: 20, rx: 5, fill: "#fff", stroke: o.color, strokeWidth: 1, style: { pointerEvents: "none" } }),
       R("text", { x: textX, y: ey + 3.5, textAnchor: anchorRight ? "start" : "end", fontSize: 10.5, fontWeight: 600, fill: "var(--fg)", style: { pointerEvents: "none" } }, label),
+    );
+  }
+
+  // A signal-flow "bubble" that travels along a wire from source -> destination via SMIL
+  // animateMotion. White core + colored halo keeps it visible on any wire color (incl. yellow).
+  // `len` is the approximate wire length in canvas px; duration is derived from it so bubbles
+  // travel at a roughly constant speed regardless of wire length (clamped so extremes stay sane).
+  FlowBubble(key, d, color, len) {
+    const R = React.createElement;
+    const SPEED = 120; // px per second
+    const dur = Math.max(0.9, Math.min(5, (len || 200) / SPEED));
+    return R("g", { key: "flow-" + key, style: { pointerEvents: "none" } },
+      R("animateMotion", { dur: dur + "s", repeatCount: "indefinite", path: d, rotate: "auto", keyPoints: "0;1", keyTimes: "0;1", calcMode: "linear" }),
+      R("circle", { r: 6.5, fill: color, opacity: 0.28 }),
+      R("circle", { r: 3.4, fill: "#fff", stroke: color, strokeWidth: 1.8 }),
     );
   }
 
@@ -953,6 +972,10 @@ class Component extends DCLogic {
         const x1 = fp.x + this.CARD_W, y1 = fp.y + fy, x2 = tp.x, y2 = tp.y + ty, mx = (x1 + x2) / 2;
         const col = this.SIGNAL_COLORS[r.signalType] || "var(--neutral-400)";
         const tracing = !!tc, inChain = tc?.routeIds?.has(r.id), hasSig = tc?.signalRouteIds?.has(r.id);
+        // A wire is "flowing" when live signal reaches the receiving device's input port. When
+        // tracing, that is the traced signal reaching the port; otherwise the source is emitting
+        // (not blocked/muted/zero-gain), so the downstream input is detecting audio/video.
+        const flowing = tracing ? (inChain && hasSig) : !this.isBlocking(r.fromDevice);
         const outOfScope = scopeIds && !(scopeIds.has(r.fromDevice) && scopeIds.has(r.toDevice));
         const opacity = tracing ? (inChain ? 1 : 0.07) : (outOfScope ? 0.1 : 1);
         const color = tracing && inChain ? (hasSig ? col : "var(--danger)") : col;
@@ -964,13 +987,15 @@ class Component extends DCLogic {
           const fromOn = this.rectVisible(fp.x, fp.y, this.cardHeight(fd, s.selectedDev === fd.id), vb);
           const toOn = this.rectVisible(tp.x, tp.y, this.cardHeight(td, s.selectedDev === td.id), vb);
           if (!fromOn && !toOn) return null; // both ends offscreen -> nothing to show
-          if (!fromOn || !toOn) return this.OffscreenStub(r, { fromOn, toOn, x1, y1, x2, y2, fd, td, color, opacity, width, dash });
+          if (!fromOn || !toOn) return this.OffscreenStub(r, { fromOn, toOn, x1, y1, x2, y2, fd, td, color, opacity, width, dash, flowing });
         }
         const d = `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
         return R("g", { key: r.id, style: { opacity, transition: "opacity 0.25s" } },
           R("path", { d, stroke: "transparent", strokeWidth: 14, fill: "none", style: { pointerEvents: "stroke", cursor: "pointer" }, onClick: e => { e.stopPropagation(); this.traceFromRoute(r.id); }, onDoubleClick: e => { e.stopPropagation(); this.removeRoute(r.id); this.setState({ tracedChain: null }); } }),
           inChain && hasSig ? R("path", { d, stroke: col, strokeWidth: 9, fill: "none", strokeOpacity: 0.14, style: { pointerEvents: "none" } }) : null,
           R("path", { d, stroke: color, strokeWidth: width, fill: "none", strokeDasharray: dash, style: { pointerEvents: "none", transition: "stroke-width 0.2s" } }),
+          // Animated flow: a bubble travels source -> destination when signal is present.
+          flowing ? this.FlowBubble(r.id, d, color, Math.hypot(x2 - x1, y2 - y1)) : null,
           R("circle", { cx: x1, cy: y1, r: inChain ? 4 : 3, fill: color, style: { pointerEvents: "none" } }),
           R("circle", { cx: x2, cy: y2, r: inChain ? 4 : 3, fill: color, style: { pointerEvents: "none" } }),
         );
@@ -1055,18 +1080,15 @@ class Component extends DCLogic {
     const statusText = offline ? "Offline" : dsp.mute ? "Muted" : sigStatus === "idle" ? "Idle" : sigStatus === "passing" ? "Streaming" : "Active";
     const statusColor = offline ? "var(--danger)" : dsp.mute ? "var(--crestron-gold)" : active ? "var(--success)" : "var(--fg-subtle)";
     const gainTxt = (dsp.gain > 0 ? "+" : "") + dsp.gain + " dB";
-    const bars = [0, 1, 2, 3, 4, 5];
+    // Signal presence is now shown by the animated wires themselves (flow travels from
+    // source -> destination). This widget keeps the NAX health status + gain readout only —
+    // the animated level-meter equalizer was removed in favor of wire animation.
     return R("div", { style: { height: this.NAX_WIDGET_H, boxSizing: "border-box", display: "flex", alignItems: "center", gap: 8, padding: "0 10px", borderBottom: "1px solid var(--border)", background: "var(--neutral-50)" } },
       R("span", { style: { fontSize: 8, fontWeight: 800, letterSpacing: "0.08em", color: "var(--crestron-mid-blue)", background: "var(--blue-50)", padding: "2px 5px", borderRadius: 3 } }, "NAX"),
       R("div", { style: { display: "flex", alignItems: "center", gap: 4 } },
         R("div", { style: { width: 5, height: 5, borderRadius: "50%", background: statusColor, animation: active ? "cpPulse 1.6s infinite" : "none" } }),
         R("span", { style: { fontSize: 9.5, fontWeight: 600, color: statusColor } }, statusText)),
-      // live level meter
-      R("div", { style: { marginLeft: "auto", display: "flex", alignItems: "flex-end", gap: 2, height: 16 } },
-        bars.map(i => R("div", { key: i, style: { width: 3, height: `${5 + i * 2}px`, borderRadius: 1, transformOrigin: "bottom",
-          background: active ? (i > 3 ? "var(--crestron-gold)" : "var(--crestron-sky)") : "var(--neutral-300)",
-          animation: active ? `cpMeter ${0.7 + i * 0.12}s ease-in-out infinite` : "none", animationDelay: `${i * 0.06}s` } }))),
-      R("span", { style: { fontSize: 9, fontWeight: 700, color: dsp.mute ? "var(--crestron-gold)" : "var(--fg-muted)", fontFamily: "var(--font-mono)", minWidth: 36, textAlign: "right" } }, dsp.mute ? "MUTE" : gainTxt),
+      R("span", { style: { marginLeft: "auto", fontSize: 9, fontWeight: 700, color: dsp.mute ? "var(--crestron-gold)" : "var(--fg-muted)", fontFamily: "var(--font-mono)", minWidth: 36, textAlign: "right" } }, dsp.mute ? "MUTE" : gainTxt),
     );
   }
 
