@@ -33,10 +33,28 @@ _Read this section to understand the product. \~5–7 minutes._
 ### Core Problems
 
 1. **Fragmented tooling:** Installers switch between multiple tools to design systems, discover devices, build routes, configure DSP, and troubleshoot — creating context loss, wasted time, and errors at every handoff.
+<!--   - **Evidence:** Qualitative support data and dealer feedback (Assumption 1, 🟢 High confidence). **`[needs data]`** — number of distinct tools opened per commissioning job; time lost per switch.-->
 2. **No visual signal flow:** There is no way to see how audio and video signals flow through a system end-to-end. Installers must mentally reconstruct signal paths from text-based UIs and spreadsheet-style grids.
-3. **Offline design gap:** Installers cannot pre-design systems before arriving on site. All configuration requires a live connection to the control processor, eliminating pre-wire planning.
+<!--   - **Evidence:** Directly observable in the current tool surface — NVX Director exposes routing only as an `AV Routing Matrix` (rows/columns per capability), with no end-to-end path representation (see NVX Director settings inventory, §C). **`[needs data]`** — installer verbatims describing how they currently reconstruct signal paths.-->
+3. **Offline design gap:** Installers cannot pre-design systems before arriving on site and push the design to the system. All configuration requires a live connection to the control processor, eliminating pre-wire planning.
+<!-->   - **Evidence:** Dealer requests (Assumption 4, 🟢 High confidence). Partial precedent exists in NVX Director's `Placeholders` feature, which lets a domain be designed before hardware arrives — confirming demand but scoped to NVX domains only. **`[needs data]`** — frequency and volume of dealer requests; % of jobs where pre-design would apply.-->
 4. **Grid/canvas disconnect:** Routing changes made in one view (canvas vs. grid) do not reliably reflect in the other, eroding trust in the system's accuracy.
+<!--   - **Evidence:** **`[needs data]`** — this is currently an **assumption, not a validated problem.** No canvas exists in the shipping product, so no sync failures have been observed. Reframe as a forward-looking design constraint (see System Behavior rule 2) unless evidence emerges from an analogous existing surface.-->
 5. **Fragmented configuration surfaces:** Key capabilities (e.g., DSP, routing insights, diagnostics) exist across multiple tools and device interfaces today. Configure Pro consolidates these into a single, unified workflow.
+<!--   - **Evidence:** Confirmed by direct analysis of NVX Director — ~200 customer-facing settings across 11 routes, spanning system administration, PKI, domain/multicast planning, control-system integration, routing, and per-endpoint media configuration (see NVX Director settings inventory). Device-specific WebUIs add further surfaces. **`[needs data]`** — equivalent inventory for device WebUIs and legacy configuration software.-->
+
+#### Evidence Gaps — How We Close Them
+
+<!--Every **`[needs data]`** above is unsourced as of 2026-07-29. This table is the plan to close them; it should be emptied before Phase A is committed.-->
+
+| # | Gap | How we'll close it | Owner | Target |
+| --- | --- | --- | --- | --- |
+| 1 | Tools opened per commissioning job; time lost per switch | Contextual inquiry during live commissioning (3–5 sessions) | *TBD* | *TBD* |
+| 2 | Installer verbatims on signal-path reconstruction | Same contextual inquiry sessions; add a signal-tracing probe | *TBD* | *TBD* |
+| 3 | Dealer demand volume for offline pre-design | Dealer survey (already listed under Discovery & Validation) | *TBD* | *TBD* |
+| 4 | Support ticket categorisation — NVX Director questions, "no audio" troubleshooting, routing errors | Query support system by category over trailing 2 quarters | *TBD* | *TBD* |
+| 5 | System-size distribution across deployed processors | Processor telemetry analysis (already listed under Discovery & Validation) | *TBD* | *TBD* |
+| 6 | Settings-surface inventory for device WebUIs and legacy config software | Repeat the NVX Director static-analysis method on the next-largest surface | *TBD* | *TBD* |
 
 ### User Journey Context
 
@@ -68,7 +86,7 @@ These problems surface at critical points in the installer workflow:
 5. Designer configures basic DSP settings (gain, delay) on placeholder nodes
 6. Designer saves layout — positions, zoom, grouping all persist
 
-### Scenario 2: Troubleshoot "No Audio" on a Live System
+### Scenario 2: Troubleshoot "No Audio" or "No Video" on a Live System
 
 1. Installer selects the destination device on the canvas
 2. Installer traces the signal path backward — highlighted end-to-end
@@ -224,20 +242,48 @@ Configure Pro is a deliberate shift in Crestron's strategy: to unify these exper
 
 _What will change for the user? How do we know it worked?_
 
-| Outcome | Metric | Target |
+### Primary Metrics (paired: adoption + outcome)
+
+This initiative is optimized against **two** metrics, deliberately paired. The first proves the canvas paradigm is adopted; the second proves adoption actually solved the fragmentation problem. Neither is sufficient alone — high canvas usage that doesn't reduce tool switching means we added a surface instead of replacing one.
+
+| # | Metric | Instrumented by | Baseline | Target | Measured |
+| --- | --- | --- | --- | --- | --- |
+| **P1 (adoption)** | % of routing interactions initiated on the canvas (vs. routing grid vs. external tools) | A-27, A-28 | 0% (no canvas exists today) | **≥70%** | 30 and 90 days post Phase-A launch |
+| **P2 (outcome)** | External tool launches per commissioning job (device WebUI, NVX Director, legacy config software) | A-29 | **`[needs data]`** — must be established pre-launch | **≥50% reduction vs. baseline** | 90 days post Phase-A launch |
+
+> **P2 is blocked on a baseline.** Without a pre-launch measurement of external tool launches per job, the target is unfalsifiable. Establishing this baseline is a Phase-A entry condition — see Evidence Gap #1 and #4.
+
+### Secondary Metrics
+
+Monitored to explain *why* the primary metrics moved. Not optimization targets.
+
+| Outcome | Metric | Target | Phase |
+| --- | --- | --- | --- |
+| Users can locate and add any device within seconds | Drag-and-drop success rate | Near 100% | A |
+| Users correctly distinguish physical vs. virtual devices | % of systems started via drag-drop from panel | ≥80% | A |
+| Users can represent a full room/system without switching tools | % of systems fully designed in Configure Pro without external tools | Baseline → measure | A |
+| Installers can diagnose signal issues without trial-and-error | Time to diagnose a "no audio" issue | Baseline → measure | B |
+| Reduction in switching to external DSP tools | DSP tasks completed in Configure Pro vs. external | Baseline → measure | B |
+| Faster completion of DSP-related tasks | Time to complete DSP configuration | Baseline → measure | B |
+| Smooth transition from offline design → live deployment | First-time deployment success rate | Baseline → measure | B |
+| Users can complete full system design offline | Offline design completion rate | Baseline → measure | D |
+
+**Baseline ownership:** every "Baseline → measure" row above requires a named owner and a date by which the baseline exists. Rows without one are not measurable and should not be cited as success criteria. **`[needs data]`** — assign owners.
+
+### Guardrail Metrics (must not regress)
+
+What we are *not* willing to trade away to hit the primary metrics.
+
+| Guardrail | Metric | Threshold |
 | --- | --- | --- |
-| Users can accurately trace signal flow across a system without assistance | % of routing interactions occurring on canvas (vs. legacy methods) | ≥70% |
-| Users can represent a full room/system without switching tools | Systems fully designed in Configure Pro without external tools | Baseline → measure |
-| Users can locate and add any device within seconds | Drag-and-drop success rate | Near 100% |
-| Users correctly distinguish physical vs. virtual devices | % of systems started via drag-drop from panel | ≥80% |
-| Zero sync inconsistencies between canvas and grid views | Reported sync errors between views | 0 |
-| Zero data loss during mode transitions (offline → online) | Data loss incidents | 0 |
-| Canvas remains performant at scale | UI interaction latency | <100–200ms perceived |
-| Routing updates reflect in near real-time | Routing update latency | Within X ms |
-| Reduction in switching to external DSP tools | DSP tasks completed in Configure Pro vs. external | Baseline → measure |
-| Faster completion of DSP-related tasks | Time to complete DSP configuration | Baseline → measure |
-| Users can complete full system design offline | Offline design completion rate | Baseline → measure |
-| Smooth transition from offline design → live deployment | First-time deployment success rate | Baseline → measure |
+| Canvas interactions feel instantaneous | p90 UI interaction latency (pan, zoom, node select, connection create) | <200ms; p99 <500ms |
+| Routing changes propagate without perceptible delay | Routing update latency, canvas ↔ grid ↔ device | <500ms |
+| Canvas and grid never disagree | Reported sync inconsistencies between views | 0 |
+| No configuration is lost in a mode transition | Data loss incidents (offline → online) | 0 |
+| Visual routing does not introduce new misconfigurations | Invalid/incorrect routes deployed to live systems | No increase vs. pre-canvas baseline |
+| Existing Configure Pro workflows are not slowed | Task completion time for routing tasks already supported today | No regression |
+
+**Note on latency:** the original "<100–200ms perceived" and "Within X ms" targets have been replaced with percentile-based thresholds, which are what A-33 actually instruments (p50/p90/p99). A single average figure hides the tail that erodes installer trust.
 
 ---
 

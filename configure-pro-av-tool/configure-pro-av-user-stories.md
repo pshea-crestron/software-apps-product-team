@@ -464,7 +464,30 @@
 - **Given:** I am connected to a live control processor
 - **and Given:** I have a system open on the canvas with one or more NAX device nodes
 - **When:** I view the canvas
-- **Then:** Each NAX device node displays a status widget showing the real-time state of its crucial features and functions, and the widget updates automatically as device state changes without requiring a manual refresh
+- **Then:** Each NAX device node displays a status widget showing the real-time state of its crucial features and functions (health status and gain readout), and the widget updates automatically as device state changes without requiring a manual refresh
+
+- **Scenario:** Signal flow is shown by animated wires rather than a device-level meter/equalizer
+- **Given:** I have a live system open on the canvas with routed connections
+- **and Given:** The device node does NOT show an animated level-meter (equalizer) to indicate audio/video flow
+- **When:** A signal is flowing along a wire
+- **Then:** The wire itself is animated — a travelling "bubble" marker moves from the source output toward the destination input — to indicate live audio/video flow, and a wire with no signal present is drawn static (not animated)
+
+- **Scenario:** The flow indicator is visible on any wire color and accessible to color-blind users
+- **Given:** I have a live system with wires of multiple signal-type colors (including light colors such as the yellow analog wires)
+- **and Given:** Flow is conveyed by motion and shape (a moving bubble), not by color alone
+- **When:** A wire is carrying signal
+- **Then:** The bubble reads clearly against every wire color by using a high-contrast form — a bright core with a contrasting outline/halo rather than relying on hue — so that presence and direction of flow are distinguishable without depending on color perception
+
+- **Scenario:** Bubbles travel at a consistent speed regardless of wire length
+- **Given:** I have flowing wires of different lengths on the canvas
+- **When:** I observe the flow bubbles on short and long wires at the same time
+- **Then:** All bubbles travel at a roughly constant on-screen speed — the animation duration scales with the wire's length rather than being fixed — so a long wire does not appear to move faster than a short one (within sensible minimum/maximum bounds)
+
+- **Scenario:** Flow is detected by the receiving component at its input port
+- **Given:** I have a routed connection from a source output to a destination input on the canvas
+- **and Given:** The receiving (destination) component is the one that detects whether a signal is present at its input port
+- **When:** The receiving component detects audio/video at its input port
+- **Then:** The connecting wire animates to show flow into that input; when the receiving component detects no signal at its input port (e.g., the upstream source is muted, at zero gain, out of order, or disconnected), the wire stops animating and renders static
 
 ---
 
