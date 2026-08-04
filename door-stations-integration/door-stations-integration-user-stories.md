@@ -914,18 +914,41 @@ End users can respond to visitors at the door even when away from home.
 - **Summary:** Receive a phone call on my mobile device(s) when Door Station button is pressed
 
 ##### Use Case (Jira Description):
-As a homeowner/resident, I want to receive a push notification on my mobile device(s) when a doorbell is pressed so that I can quickly decide whether to answer, ignore, or review later.
+As a homeowner/resident, I want to receive a traditional phone call (VoIP) on my mobile device(s) when a doorbell is pressed so that I can quickly decide whether to answer, ignore, or review later — even when the Crestron Home app is closed and my phone is locked.
+
+**Note:** Phone/VoIP calling is a distinct notification mode from standard push notifications (CHOME-113693). The Notifications settings screen will include a separate **toggle for virtual/VoIP calling**, alongside the existing push-notification toggle. Enabling virtual calling disables traditional push notifications for that device — a homeowner receives one or the other, not both, for the same door station event.
 
 ##### Acceptance Criteria (verbatim from Jira):
 **Given** someone pushed the button on the door station,
 
 **When** the event is received by the Crestron Home system,
 
-**Then** a phone call is triggered to the user's **registered** mobile devices,
+**Then** a phone call is triggered to the end user's mobile devices that are **subscribed for virtual calls**,
 
-**And** the phone call shall be received within **1 second** of the doorbell being pressed,
+**And** the phone call shall be received within 1 second of the doorbell being pressed,
 
 **And** the phone call shall be triggered on supported iOS & Android devices.
+
+#### Scenario: Virtual calling toggle is enabled
+
+- **Given** the homeowner has enabled the **Virtual Calling (VoIP)** toggle in the Notifications settings screen for the device,
+- **When** the door station button is pressed,
+- **Then** the device receives a native phone call for the event, using the OS's VoIP call UI (CallKit on iOS, ConnectionService on Android),
+- **And** standard push notifications for that same event are suppressed on this device, since virtual calling and push are mutually exclusive notification modes.
+
+#### Scenario: Virtual calling toggle is disabled (default push behavior)
+
+- **Given** the homeowner has left the **Virtual Calling (VoIP)** toggle off,
+- **When** the door station button is pressed,
+- **Then** the device receives a standard push notification (per CHOME-113693) rather than a phone call,
+- **And** no VoIP call is placed to this device.
+
+#### Scenario: Virtual calling toggle changes while a call is in flight
+
+- **Given** a door station phone call is actively ringing on the homeowner's device,
+- **When** the homeowner toggles Virtual Calling off on that device during the call,
+- **Then** the in-progress call is not affected — the toggle only governs how future events are delivered,
+- **And** subsequent door station events after the toggle change are delivered as push notifications instead.
 
 ### Alternate Scenarios
 
@@ -934,20 +957,21 @@ As a homeowner/resident, I want to receive a push notification on my mobile devi
 - Given the homeowner is on an active cellular or VoIP call
 - When the door station button is pressed
 - Then the door station call is delivered as a call waiting notification (if the OS supports it)
-- And if the homeowner ignores it, the door station call terminates after a defined ring timeout
+- And if the homeowner ignores it, the door station call terminates after a its defined ring timeout
 
-#### Scenario: Phone call goes unanswered — fallback to push notification
+#### Scenario: Phone call goes unanswered
 
 - Given the door station phone call rings on the homeowner's device
 - When the homeowner does not answer within the ring timeout
 - Then the call terminates
-- And a push notification is delivered as a fallback (if push is also enabled)
+- And the missed door station call will appear inside the iPhone's native Phone App under the Recents tab (marked in red).
+- And Tapping it will allow the user to open the preview screen in the app (CHOME-114337)
 - And the missed call is logged in the door station event log
 
 #### Scenario: Homeowner declines the phone call
 
 - Given the door station phone call is ringing
-- When the homeowner taps Decline
+- When the homeowner taps Decline or declines the call
 - Then the call terminates immediately and the declined call is logged
 
 #### Scenario: Phone call received when device is in Do Not Disturb mode
@@ -957,22 +981,30 @@ As a homeowner/resident, I want to receive a push notification on my mobile devi
 - Then if the homeowner has configured critical alerts or DND exceptions for Crestron Home, the call rings through
 - And if no exception is configured, the call is silenced and appears as a missed call notification
 
+#### Scenario: Phone call goes unanswered — fallback to push notification
+
+- Given the door station phone call rings on the homeowner's device
+- When the homeowner does not answer within the ring timeout
+- Then the call terminates
+- And a push notification is delivered as a fallback (if push is also enabled)
+- And the missed call is logged in the door station event log
+
 ---
 
 #### User Story CHOME-114337
 - **Summary:** Answering the phone call from the doorbell opens the Crestron Home app preview screen
 
 ##### Use Case (Jira Description):
-As a homeowner/resident, I want to tap a doorbell notification on my mobile device(s) and open the Crestron Home app and see & hear who is at the door
+As an end user, I want to answer a virtual call from my door station on my mobile device(s) and open the Crestron Home app to see & hear who is at the door
 
 ##### Acceptance Criteria (verbatim from Jira):
 Dependency → UX Mock up of notification action screen
 
-Scenario: Launching the Notification Action Screen from a Phone Call
+Scenario: Answering the Virtual Call Launches the Door Station Preview Screen
 
-- Given I have received a phone call for a "Doorbell" or "Person Detected" event,
-- When I answer the phone call on my mobile device,
-- Then the video first screen shall launch immediately within the Crestron Home app,
+- Given I have received a virtual call for a "Doorbell" or "Person Detected" event,
+- When I answer the virtual call via the device's native call UI (CallKit on iOS, ConnectionService on Android),
+- Then the video-first screen shall launch immediately within the Crestron Home app,
 - And the screen shall default to one-way audio and video (stream from the door to the phone),
 - And the screen shall display: Chat (two-way audio), Unlock/Lock buttons.
 
@@ -981,24 +1013,31 @@ Scenario: Launching the Notification Action Screen from a Phone Call
 #### Scenario: App is not running when call is answered
 
 - Given the Crestron Home app is not running in the background
-- When the homeowner answers the door station phone call
+- When the homeowner answers the door station virtual call
 - Then the app launches from cold start and navigates directly to the preview screen
 - And video begins loading immediately without requiring a separate tap
 
 #### Scenario: Homeowner answers but video fails to connect
 
-- Given the homeowner answers the phone call
+- Given the homeowner answers the virtual call
 - When video does not connect within 5 seconds
 - Then audio-only mode is active and clearly indicated
 - And a visual placeholder is shown rather than a blank screen
 - And a retry option is available for video without ending the audio
 
-#### Scenario: Homeowner unlocks door during the answered call
+#### Scenario: Call answered in audio-only mode
 
-- Given the preview screen is active after answering the phone call
-- When the homeowner taps Unlock
-- Then the associated lock receives an unlock command and the action is logged
-- And the call continues — the unlock does not terminate the call
+- Given the homeowner answers the virtual call on a device or network that does not support video for the call,
+- When the call connects,
+- Then the preview screen opens directly in audio-only mode with that mode clearly indicated,
+- And no failed-video-connection message or retry prompt is shown, since video was never attempted for this call.
+
+#### Scenario: Homeowner declines the virtual call
+
+- Given the virtual call is ringing on the homeowner's device,
+- When the homeowner declines the call,
+- Then the Crestron Home app is not launched,
+- And no preview screen is shown.
 
 #### Scenario: Call is answered simultaneously on two devices
 
