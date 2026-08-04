@@ -2,14 +2,30 @@
 name: product-capabilities
 description: Core feature capabilities for the Door Station Integration
 
-> **Source:** [Confluence](https://crestroneng.atlassian.net/wiki/spaces/CHOME/pages/2655060011/Door+Stations+-+Product+Capabilities+Document)  
-> **Last Updated:** Version 78 — June 4, 2026
+> **Source:** [Confluence](https://crestroneng.atlassian.net/wiki/spaces/CHOME/pages/2655060011/Door+Stations+-+Product+Capabilities+Document)
 
 ---
 
-## Overview
+## 📄 Document Overview
 
-The goal of this initiative is to establish first-class door station support in Crestron Home, beginning with the ability for homeowners to receive, answer, and act on doorbell and intercom events directly from the Crestron Home mobile application. This work lays the foundation for call-like mobile experiences, reliable visitor awareness, and secure remote access control, while remaining extensible to in-home touch panels and future hardware integrations.
+| Field | Value |
+|---|---|
+| **Author** | Pat Shea |
+| **Reviewers** | Prasad, Colin, Mike W, Jason, Chase, Bill, Sef |
+| **Status** | Technical Development Discovery & Delivery (Release 1 in progress) **[Product Discovery → Initial PRD → Development Discovery → Refined PRD → Delivery]** |
+| **Jira Initiative** | [CHOME-113883](https://crestroneng.atlassian.net/browse/CHOME-113883) |
+
+**Summary:** First-class door station support in Crestron Home (2N and Ubiquiti) so homeowners can receive, answer, and act on doorbell/intercom events from the Crestron Home mobile app when away and have a more integrated experience when at home — starting with must-just-work MVP capabilities.
+
+---
+
+## Problem Statement
+
+Crestron homeowners need a way to see, hear, and grant access to visitors from anywhere in real time, because today the door station is a third-party device driver that works within the home rather than a native part of Crestron Home — this leaves them missing visitors and unable to respond when away from home.
+
+## Goals & Objectives
+
+The goal of this initiative is to establish first-class door station support in Crestron Home, beginning with the ability for homeowners to receive, answer, and act on doorbell and intercom events directly from the Crestron Home mobile application when away from home. This work lays the foundation for call-like mobile experiences, reliable visitor awareness, and secure remote access control, while remaining extensible to in-home touch panels and future hardware integrations.
 
 At its core, this effort focuses on delivering a consistent, intuitive, and trustworthy door experience—whether the user is at home or away—by integrating door stations as native participants in the Crestron Home ecosystem rather than as isolated third-party devices. While the initial scope prioritizes essential, "must-just-work" functionality, the long-term vision includes richer automation, access control, and intelligence enabled by deeper door station integration.
 
@@ -17,23 +33,22 @@ This document represents an early, high-level view of the capabilities, phases, 
 
 ---
 
+## 👥 Target Users & Personas
+
+| Persona | Role | Primary Need |
+|---|---|---|
+| **Homeowner** | Primary end user / account owner | See, hear, and grant access to visitors from anywhere; trust that it "just works" |
+| **Resident** | Additional household member | Receive notifications and respond to visitors on their own devices |
+| **Dealer** | Sells the Crestron Home system | Confidently sell Crestron Home systems to homeowners & residents who want visitor notification & access control when away from the home |
+| **Installer** | Commissions & configures the system | Discover, commission, and configure 2N & Ubiquiti devices in Configure Pro easily |
+| **Property Manager** | Manages a multi-dwelling unit (MDU) | Per-unit access control and logging (Release 2+) |
+| **MDU Resident** | Tenant in a multi-dwelling unit | Secure independent access to their unit (Release 2+) |
+
+---
+
 ## 💡 High Level Objectives
 
 This section is an initial dump of ideas that are possible with the door station integration — a 30,000-foot view on the possibilities of what we _could_ do with different door station integrations.
-
-### Supporting Documentation
-
-- Early Mockups *(Needs Update)*: [Figma — Intercoms page](https://www.figma.com/design/uXgBee3HBSx5p05IaZ4oIT/Crestron-Home-4.0-UX?node-id=1207-79280)
-- **Research & Designs**
-  - Mobile Development: [Mobile Dev Confluence Page](https://crestroneng.atlassian.net/wiki/spaces/MobileDev/pages/2864381956)
-  - Platform Development:
-    - [CHOME Platform Page](https://crestroneng.atlassian.net/wiki/spaces/CHOME/pages/371064881)
-    - [RESCLOUD Page 1](https://crestroneng.atlassian.net/wiki/spaces/RESCLOUD/pages/2811101302)
-    - [RESCLOUD Page 2](https://crestroneng.atlassian.net/wiki/spaces/RESCLOUD/pages/2811494401)
-- [2N HAPI Documentation](https://wiki.2n.com/hip/hapi/latest/en)
-- [Ubiquiti Developer Site Manager](https://developer.ui.com/site-manager/v1.0.0/gettingstarted)
-- Jira Initiative: [CHOME-113883](https://crestroneng.atlassian.net/browse/CHOME-113883)
-- Jira Initiative for Intercom support (2024): [CHOME-56581](https://crestroneng.atlassian.net/browse/CHOME-56581)
 
 ### Basic Functionality (Table Stakes)
 
@@ -72,42 +87,208 @@ Things that should "just work" and are non-negotiable when door stations are int
 
 ## 🚪 Hardware Support
 
-### Ubiquiti
+This section defines the **universe of hardware we can support** and in which role. Which of these devices is *committed* to a given release is decided in [🎯 Scope](#-scope); companion-hardware requirements, APIs, and procurement are tracked in [⚠️ Risks & Dependencies](#️-risks--dependencies).
 
-**Hardware Procurement:** [SharePoint Spreadsheet](https://crestron1-my.sharepoint.com/:x:/g/personal/joster_crestron_com/IQAwKQzkmE3YSYmfUlv8BryIAYr-ytMk--pwPOXm3Tlx1yk?e=qcpCKa)
+> **Release column key:** **R1** = targeted for first release · **R2+** = supported in a future release. Release calls here are a summary; [🎯 Scope](#-scope) is the source of truth for what R1 actually commits to.
 
-**Minimum Required Support:**
-- Ubiquiti UniFi Access Doorbell or Intercom
-- UDM Pro, UNVR, Cloud Key Gen2+, or Cloud Gateway Max
-- UniFi Access Gate Hub or the UniFi Access Hub Mini
-- UniFi Protect ViewPort (optional)
+### Device Matrix
 
-#### Targeted Hardware for First Release
+| Platform | Device | Role | Release | Notes |
+|---|---|---|---|---|
+| **2N** | [IP Verso 2.0](https://www.2n.com/en-US/products/intercoms/2n-ip-verso-2/) | Doorbell / Intercom | R1 | Modular "Unicorn" — Full HD camera, night vision, up to 30 modules (fingerprint, keypad, Bluetooth) |
+| **2N** | IP Solo | Doorbell / Intercom | R1 | Compact, hidden camera, HD audio |
+| **2N** | [IP One](https://www.2n.com/en-US/products/intercoms/2n-ip-one/) | Doorbell / Intercom | R1 | Durable video intercom for family homes |
+| **2N** | [Security Relay](https://www.2n.com/en-US/products/security-relay) | Access / Relay | R1 | Door / lock actuation |
+| **Ubiquiti** | [UVC-G6-Pro-Entry](https://techspecs.ui.com/unifi/door-access/uvc-g6-pro-entry?subcategory=door-access-readers) | Doorbell / Intercom | R2+ | Targeted Ubiquiti doorbell (R2+) |
+| **Ubiquiti** | [UVC-Doorbell-Lite](https://techspecs.ui.com/unifi/physical-security/uvc-doorbell-lite?subcategory=all-physical-security) | Doorbell / Intercom | R2+ | Targeted Ubiquiti doorbell (R2+) |
+| **Ubiquiti** | UniFi Access Doorbell / Intercom (other models) | Doorbell / Intercom | R2+ | "More doorbell & intercom products" |
+| **Ubiquiti** | UniFi Dream Machine | Gateway / Console | R2+ | Future |
+| **Ubiquiti** | [UniFi Cameras](https://techspecs.ui.com/unifi/cameras-nvrs) | Camera | R2+ | Future |
+| **Ubiquiti** | [UniFi Protect ViewPort](https://techspecs.ui.com/unifi/cameras-nvrs/ufp-viewport?subcategory=all-cameras-nvrs) | Display / Viewport | R2+ | Optional even at min-spec; future targeted support |
+| **Ubiquiti** | [USL-Entry](https://techspecs.ui.com/unifi/cameras-nvrs/usl-entry?subcategory=cameras-superlink-sensors) | Entry sensor | R2+ | Future |
+| **Ubiquiti** | [USL-Motion](https://techspecs.ui.com/unifi/cameras-nvrs/usl-motion?subcategory=cameras-superlink-sensors) | Motion sensor | R2+ | Future |
+| **Ubiquiti** | [USL-Glassbreak](https://techspecs.ui.com/unifi/cameras-nvrs/usl-glassbreak?subcategory=cameras-superlink-sensors) | Glass break sensor | R2+ | Future |
 
-- **Doorbell / Intercom:** [UVC-G6-Pro-Entry](https://techspecs.ui.com/unifi/door-access/uvc-g6-pro-entry?subcategory=door-access-readers)
-- **Cloud Gateway:** [UCG-Max](https://techspecs.ui.com/unifi/cloud-gateways/ucg-max?subcategory=all-cloud-gateways)
-- **Door Hub:** [UA-Hub-Door-Mini](https://techspecs.ui.com/unifi/door-access/ua-hub-door-mini?subcategory=all-door-access)
-  - [Ubiquiti Help Center — Choosing a Door Access Hub](https://help.ui.com/hc/en-us/articles/23964054398871-Choosing-a-UniFi-Access-Control-Hub)
+### Required Companion Hardware (Ubiquiti)
 
-#### Supported Hardware for Future Releases
+Ubiquiti doorbells do not function standalone — they require a gateway/console and an access hub. This table captures the **minimum supported** options vs. the **targeted Ubiquiti** combination.
 
-- More doorbell and intercom products
-- UniFi Dream Machine
-- [Ubiquiti Cameras](https://techspecs.ui.com/unifi/cameras-nvrs)
-- [UniFi Viewport](https://techspecs.ui.com/unifi/cameras-nvrs/ufp-viewport?subcategory=all-cameras-nvrs)
-- Ubiquiti Sensors
-  - [Entry sensors (USL-Entry)](https://techspecs.ui.com/unifi/cameras-nvrs/usl-entry?subcategory=cameras-superlink-sensors)
-  - [Motion sensors (USL-Motion)](https://techspecs.ui.com/unifi/cameras-nvrs/usl-motion?subcategory=cameras-superlink-sensors)
-  - [Glass break sensor (USL-Glassbreak)](https://techspecs.ui.com/unifi/cameras-nvrs/usl-glassbreak?subcategory=cameras-superlink-sensors)
+| Component Role | Minimum Supported (any of) | Targeted (Ubiquiti) |
+|---|---|---|
+| Doorbell / Intercom | UniFi Access Doorbell or Intercom | **UVC-G6-Pro-Entry** |
+| Cloud Gateway / Console | Cloud Gateway Max | **[UCG-Max](https://techspecs.ui.com/unifi/cloud-gateways/ucg-max?subcategory=all-cloud-gateways)** |
+| Access Hub | UniFi Access Gate Hub · UniFi Access Hub Mini | **[UA-Hub-Door-Mini](https://techspecs.ui.com/unifi/door-access/ua-hub-door-mini?subcategory=all-door-access)** |
 
-### 2N
 
-#### Targeted Hardware for First Release
+> **2N companion hardware:** 2N intercoms operate via the My2N cloud service rather than a required on-prem gateway, so there is no equivalent companion-hardware table — that dependency is tracked in [⚠️ Risks & Dependencies](#️-risks--dependencies).
+>
+> **See also:** [Choosing a UniFi Access Control Hub](https://help.ui.com/hc/en-us/articles/23964054398871-Choosing-a-UniFi-Access-Control-Hub) · Hardware procurement for test/dev is tracked in [⚠️ Risks & Dependencies](#️-risks--dependencies).
 
-- **[2N IP Verso 2.0](https://www.2n.com/en-US/products/intercoms/2n-ip-verso-2/):** A highly modular "Unicorn" intercom with Full HD camera, night vision, and up to 30 custom modules (fingerprint, keypad, Bluetooth).
-- **2N IP Solo:** A compact, stylish IP intercom ideal for smart home automation, featuring a hidden camera and high-definition audio.
-- **[2N IP One](https://www.2n.com/en-US/products/intercoms/2n-ip-one/):** A highly durable IP video intercom designed to protect family homes.
-- **[2N Security Relay](https://www.2n.com/en-US/products/security-relay)**
+---
+
+## 🎯 Scope
+
+**Delivery status legend:**
+
+| Marker | Meaning |
+|---|---|
+| 🟢 **In Delivery** | Actively being built this release |
+| 🔵 **In Discovery** | Under technical/UX discovery; not yet committed to build |
+| ⚪ **Planned** | Committed to a release but not yet started |
+| ⚫ **Future / Not Scoped** | Later release or explicitly out of scope for now |
+
+### In Scope — Release 1 (MVP)
+
+> _TODO — confirm each item's status marker with the delivery team; markers below are a starting draft._
+
+| Capability | Status |
+|---|---|
+| Mobile push notification on doorbell press (iOS & Android) | 🔵 🟢 |
+| Answer / two-way audio + one-way video from the Crestron Home mobile app | 🔵 |
+| Commissioning of 2N door stations in Configure Pro | ⚪ |
+| Device details (model, firmware, online/offline) in Configure Pro | ⚪ |
+| Commissioning of Ubiquiti door stations in Configure Pro | ⚫ |
+| Live door station / entry camera view on Whole House Camera page | ⚫ |
+| Core function under network/cloud outage (local fallback) | ⚫ |
+| Door / gate / garage actuation + lock control (local & remote) | ⚫ |
+| Temporary PIN codes for supported door stations | ⚫ |
+
+### Out of Scope — Release 1
+
+- **Touch panel persistent ring + answer (Ubiquiti)** — deferred out of R1
+- **Biometrics** (facial recognition, fingerprint unlock) — premium/future experience
+- **911 emergency-responder override** — requires impersonator-handling design; future
+- **License plate recognition & vehicle automations** — Release 2+
+- **MDU package lockers & per-unit access control** — Release 2+
+- **Visitor intent detection / AI classification** — platform-intelligence, later
+- **Whole-home audio doorbell ring & TV video routing** — Release 2 differentiation
+- **Visitor event log / history with media** — Release 2 differentiation
+
+---
+
+## 🗓️ Timeline & Milestones
+
+> _TODO — add real target dates/milestones with delivery leads._
+
+| Milestone | Target | Status |
+|---|---|---|
+| Technical Discovery (R1 core: commissioning + mobile notify/answer) | _TODO_ | 🔵 In progress |
+| Release 1 (MVP) delivery | _TODO_ | 🟢 In progress |
+| Release 2 (differentiation) | _TODO_ | ⚫ Not started |
+| Release 3+ (premium / platform intelligence) | _TODO_ | ⚫ Not started |
+
+---
+
+## 📊 Measuring Outcomes
+
+These outcomes should drive the Success Metrics — how do we know the integration was successful? **Bold** metrics feel like things that aren't too difficult to track.
+
+| Release | Problem We Are Trying to Solve | Outcome | How It's Measured |
+|---|---|---|---|
+| 1 | Installers "shy away" from selling Crestron Home to homeowners that want away-from-home visitor notification and access control. | Installers are confident in Crestron's integration with door station partners (2N and Ubiquiti). | |
+| 1 | Installers cannot easily discover and setup door station devices in the Home. | Installers can reliably discover supported door station devices in Configure Pro. Installers can configure and commission Ubiquiti and 2N door stations without custom programming. | |
+| 1 | Homeowners cannot see, hear, or communicate with people at the door. | Homeowners can see and speak with visitors through Crestron Home — at home or away. | **% of doorbell calls answered remotely** / **Average time from doorbell press to call answer** / Ratio of missed doorbell events before vs after installation |
+| 1 | Homeowners cannot grant access to visitors unless physically present. | Homeowners can unlock doors, open gates, and open garage doors remotely. | **% of unlock/gate actions performed remotely** / Unlocks during active calls |
+| 1 | Homeowners are not reliably notified when someone is at the door or approaching the property. | Homeowners reliably notice visitors from anywhere in or outside the home and can assess who is at the door. | % of detection events acknowledged / Audio/visual alert delivery success rate / User-reported "missed visitor" complaints |
+| 1 | Visitors go unnoticed when there is a system failure (e.g., network down). | Core door functionality works under failure conditions. | **Successful door events during network outages** / **% of unlock/gate actions completed offline** / **Failure recovery time after connectivity restoration** |
+| 1 | Door interactions feel slow, unreliable, or disconnected from real-time. | Door interactions feel fast and responsive. | **Doorbell-to-notification latency** / **Intercom connection setup time** / **Unlock command acknowledgment time** |
+| 2+ | | Users are not interrupted unnecessarily by the system. | **Notification open rate** / **Notification mute/disable rate** / Ratio of notifications to user actions taken |
+| 2+ | | Users feel confident about who accessed their home. | **Frequency of visitor log views** / % of access events with associated identity / Reduction in "who came by?" support questions |
+| 2+ | | Users understand system state at a glance. | Time spent on device status screens / Support tickets related to "is it locked/offline?" / Use of health dashboard |
+| 2+ | | Routine access events are handled automatically. | **% of access events requiring no user interaction** / Automated vs manual unlock statistics / **Use of scenes or rules triggered by door events** |
+| 2+ | | Users feel safer around entrances at night. | **Motion-triggered lighting activations at night** / **Time lights stay on after detection** / Reduction in user-initiated manual lighting actions |
+| 2+ | | Users avoid managing multiple access apps. | % of access actions done from Crestron Home vs other apps / Reduction in external lock/app usage post-install |
+| 2+ | | Users feel comfortable with privacy and data handling. | Use of log deletion/retention settings / Opt-in/opt-out rates for biometrics / Privacy-related support inquiries |
+| 2+ | | System escalates attention only when needed. | % of alerts leading to action / Alerts classified as "high importance" vs total / False-positive feedback or dismissals |
+
+---
+
+## 👤 Stakeholders
+
+> _TODO — fill in names/owners for each role._
+
+| Role / Group | Responsibility | Owner |
+|---|---|---|
+| Product Management | Requirements, scope, prioritization | Pat Shea |
+| Mobile Development | Crestron Home app notifications, call UI, camera view | _TODO_ |
+| Platform Development | Processor integration, drivers, cloud services | _TODO_ |
+| Configure Pro / Tools | Commissioning & device configuration experience | _TODO_ |
+| UX / Design | Notification, call, and camera experiences | _TODO_ |
+| 2N (partner) | Intercom hardware & HAPI integration | _TODO_ |
+| Ubiquiti (partner) | Door access hardware & UniFi APIs | _TODO_ |
+| QA / Test | Verification across devices, reliability/latency | _TODO_ |
+| Documentation | Third-party device docs in Crestron Home OS manual | _TODO_ |
+
+---
+
+## ⚠️ Risks & Dependencies
+
+### Dependencies
+
+- **2N HAPI** — [documentation](https://wiki.2n.com/hip/hapi/latest/en); integration depth defines 2N capabilities
+- **My2N cloud service (2N)** — 2N intercoms rely on My2N for mobile notifications and video calls in place of an on-prem gateway; required for the R1 2N experience
+- **Ubiquiti UniFi APIs** — [developer site](https://developer.ui.com/site-manager/v1.0.0/gettingstarted)
+- **Ubiquiti companion hardware** — Ubiquiti doorbells require a gateway/console + access hub to function (targets UCG-Max gateway + UA-Hub-Door-Mini + UVC-G6-Pro-Entry); see the Required Companion Hardware table in [🚪 Hardware Support](#-hardware-support)
+- **Mobile Dev & Platform Dev** research/design pages (see Supporting Documentation)
+- **Hardware procurement** for test/dev — [SharePoint Spreadsheet](https://crestron1-my.sharepoint.com/:x:/g/personal/joster_crestron_com/IQAwKQzkmE3YSYmfUlv8BryIAYr-ytMk--pwPOXm3Tlx1yk?e=qcpCKa)
+
+### Risks & Mitigations
+
+> _TODO — assign owners and confirm mitigations._
+
+| Risk | Impact | Mitigation |
+|---|---|---|
+| Doorbell-to-notification latency exceeds "must just work" bar | Users miss visitors; erodes trust | Define & test latency SLAs; local fallback path |
+| Network / cloud outage leaves users locked out or unaware | Security & safety failure | Local fallback required for core door/access functions |
+| Partner API gaps (2N HAPI / UniFi) block a scoped capability | R1 scope slips | Validate API coverage during Technical Discovery |
+| 911 override could be exploited by impersonators | Safety / security | Defer to future release pending secure, audited design |
+| Customers dislike current-integration ring tones | Adoption / satisfaction | Provide distinct, configurable defaults (ring once / silent options) |
+
+---
+
+## ❓ Open Questions
+
+> _TODO — capture and resolve as discovery progresses._
+
+- Which Ubiquiti devices are commissioned via auto-discovery vs. manual driver add?
+- Is each door station device a separate story or acceptance criteria?
+- Should the mobile Call UI launch automatically, or only on notification tap?
+- What are the exact default behaviors for alerts, lighting (scenes), and access control?
+- Where does the notification-recipient configuration live in the end-user app?
+
+---
+
+## Appendix
+
+### Supporting Documentation
+
+- Early Mockups *(Needs Update)*: [Figma — Intercoms page](https://www.figma.com/design/uXgBee3HBSx5p05IaZ4oIT/Crestron-Home-4.0-UX?node-id=1207-79280)
+- **Research & Designs**
+  - Mobile Development:
+    - [Mobile Dev Confluence Page](https://crestroneng.atlassian.net/wiki/spaces/MobileDev/pages/2864381956)
+    - [Mobile Dev Page 2](https://crestroneng.atlassian.net/wiki/spaces/MobileDev/pages/2874900509)
+    - [Mobile Dev Page 3](https://crestroneng.atlassian.net/wiki/spaces/MobileDev/pages/2875064410)
+    - [Mobile Dev Page 4](https://crestroneng.atlassian.net/wiki/spaces/MobileDev/pages/2877390854)
+  - Platform Development:
+    - [CHOME Platform Page](https://crestroneng.atlassian.net/wiki/spaces/CHOME/pages/371064881)
+    - [RESCLOUD Page 1](https://crestroneng.atlassian.net/wiki/spaces/RESCLOUD/pages/2811101302)
+    - [RESCLOUD Page 2](https://crestroneng.atlassian.net/wiki/spaces/RESCLOUD/pages/2811494401)
+- [2N Partner API Documentation](https://developer.2n.com/)
+- [Ubiquiti Developer Site Manager](https://developer.ui.com/site-manager/v1.0.0/gettingstarted)
+- Jira Initiative: [CHOME-113883](https://crestroneng.atlassian.net/browse/CHOME-113883)
+- Jira Initiative for Intercom support (2024): [CHOME-56581](https://crestroneng.atlassian.net/browse/CHOME-56581)
+
+### User Story Maps
+
+[Big Picture (All Personas) User Story Map — Confluence Whiteboard](https://crestroneng.atlassian.net/wiki/spaces/CHOME/whiteboard/2663776299)
+
+#### End User (Homeowner / Resident) User Story Map
+
+**Backbone (activities for this user):** See → Decide → Act → Review → Forget
+
+| See (Get Notified) | Decide | Act | Review | Forget (DND) |
+|---|---|---|---|---|
+| See & hear visitors when home (touch panel, phone, tablet). Get notifications from visitors when not at home. Lights turn on when door station is "pressed" or motion is detected. "Doorbell" rings on all room speakers. | How can the user gauge importance of the notification quickly to choose how to act (answer, ignore & review later)? | Ignore the notification. Talk to visitors via touch panels. Unlock the door/gate remotely. Send temporary PIN or QR code for entry. Open the garage door remotely. | Review missed or ignored events. Get a timeline of activity throughout the day or week. See who accessed the door and how. | Handle routine events without notification — unlock for package delivery. Configure system settings to notify without ringing or to ring once. |
 
 ---
 
@@ -245,45 +426,3 @@ Related Jira: [CHOME-113680](https://crestroneng.atlassian.net/browse/CHOME-1136
 | Allow users to control retention and visibility of visitor history data | As a homeowner/resident, I want to control retention and visibility of visitor history data. | Homeowner, Resident, Installer/Admin | Privacy controls, data lifecycle management. |
 
 ---
-
-## 📊 Measuring Outcomes
-
-These outcomes should drive the Success Metrics — how do we know the integration was successful? **Bold** metrics feel like things that aren't too difficult to track.
-
-| Release | Problem We Are Trying to Solve | Outcome | How It's Measured |
-|---|---|---|---|
-| 1 | Installers "shy away" from selling Crestron Home to homeowners that want away-from-home visitor notification and access control. | Installers are confident in Crestron's integration with door station partners (2N and Ubiquiti). | |
-| 1 | Installers cannot easily discover and setup door station devices in the Home. | Installers can reliably discover supported door station devices in Configure Pro. Installers can configure and commission Ubiquiti and 2N door stations without custom programming. | |
-| 1 | Homeowners cannot see, hear, or communicate with people at the door. | Homeowners can see and speak with visitors through Crestron Home — at home or away. | **% of doorbell calls answered remotely** / **Average time from doorbell press to call answer** / Ratio of missed doorbell events before vs after installation |
-| 1 | Homeowners cannot grant access to visitors unless physically present. | Homeowners can unlock doors, open gates, and open garage doors remotely. | **% of unlock/gate actions performed remotely** / Unlocks during active calls |
-| 1 | Homeowners are not reliably notified when someone is at the door or approaching the property. | Homeowners reliably notice visitors from anywhere in or outside the home and can assess who is at the door. | % of detection events acknowledged / Audio/visual alert delivery success rate / User-reported "missed visitor" complaints |
-| 1 | Visitors go unnoticed when there is a system failure (e.g., network down). | Core door functionality works under failure conditions. | **Successful door events during network outages** / **% of unlock/gate actions completed offline** / **Failure recovery time after connectivity restoration** |
-| 1 | Door interactions feel slow, unreliable, or disconnected from real-time. | Door interactions feel fast and responsive. | **Doorbell-to-notification latency** / **Intercom connection setup time** / **Unlock command acknowledgment time** |
-| 2+ | | Users are not interrupted unnecessarily by the system. | **Notification open rate** / **Notification mute/disable rate** / Ratio of notifications to user actions taken |
-| 2+ | | Users feel confident about who accessed their home. | **Frequency of visitor log views** / % of access events with associated identity / Reduction in "who came by?" support questions |
-| 2+ | | Users understand system state at a glance. | Time spent on device status screens / Support tickets related to "is it locked/offline?" / Use of health dashboard |
-| 2+ | | Routine access events are handled automatically. | **% of access events requiring no user interaction** / Automated vs manual unlock statistics / **Use of scenes or rules triggered by door events** |
-| 2+ | | Users feel safer around entrances at night. | **Motion-triggered lighting activations at night** / **Time lights stay on after detection** / Reduction in user-initiated manual lighting actions |
-| 2+ | | Users avoid managing multiple access apps. | % of access actions done from Crestron Home vs other apps / Reduction in external lock/app usage post-install |
-| 2+ | | Users feel comfortable with privacy and data handling. | Use of log deletion/retention settings / Opt-in/opt-out rates for biometrics / Privacy-related support inquiries |
-| 2+ | | System escalates attention only when needed. | % of alerts leading to action / Alerts classified as "high importance" vs total / False-positive feedback or dismissals |
-
----
-
-## Appendix
-
-### User Story Maps
-
-[Big Picture (All Personas) User Story Map — Confluence Whiteboard](https://crestroneng.atlassian.net/wiki/spaces/CHOME/whiteboard/2663776299)
-
-#### End User (Homeowner / Resident) User Story Map
-
-**Backbone (activities for this user):** See → Decide → Act → Review → Forget
-
-| See (Get Notified) | Decide | Act | Review | Forget (DND) |
-|---|---|---|---|---|
-| See & hear visitors when home (touch panel, phone, tablet). Get notifications from visitors when not at home. Lights turn on when door station is "pressed" or motion is detected. "Doorbell" rings on all room speakers. | How can the user gauge importance of the notification quickly to choose how to act (answer, ignore & review later)? | Ignore the notification. Talk to visitors via touch panels. Unlock the door/gate remotely. Send temporary PIN or QR code for entry. Open the garage door remotely. | Review missed or ignored events. Get a timeline of activity throughout the day or week. See who accessed the door and how. | Handle routine events without notification — unlock for package delivery. Configure system settings to notify without ringing or to ring once. |
-
----
-
-*Exported from Confluence — Door Stations - Product Capabilities Document*
