@@ -65,15 +65,14 @@ class Component extends DCLogic {
       return arr;
     };
     return [
-
       // DM-NAX-8ZSA — 8-zone streaming amplifier. Ports modeled from devices/8ZSA DSP.csv.
       // 30 routable inputs / 40 outputs; the internal 34x16 routing matrix and per-channel DSP
       // chain live in the device-level view, not on the canvas node.
       { id: "eq-nax-8zsa", name: "DM-NAX-8ZSA", model: "DM-NAX-8ZSA", manufacturer: "Crestron", room: "equipment-room", type: "Amplifier", status: "Online", nax: true, source: "discovered", dspMatrix: "34 × 16",
         inputs: [
-          inp("tos-i1","Digital Toslink 1 In","digital_audio"), inp("tos-i2","Digital Toslink 2 In","digital_audio"),
-          inp("spdif-i1","Digital S/PDIF 1 In","digital_audio"), inp("spdif-i2","Digital S/PDIF 2 In","digital_audio"),
-          ...lr(inp, "rca-i", "Analog In RCA", "analog_audio", 1, 4),
+          inp("tos-i1","Digital Toslink 1 In","toslink"), inp("tos-i2","Digital Toslink 2 In","toslink"),
+          inp("spdif-i1","Digital S/PDIF 1 In","spdif"), inp("spdif-i2","Digital S/PDIF 2 In","spdif"),
+          ...lr(inp, "rca-i", "Analog In RCA", "rca", 1, 4),
           inp("aes-i1l","AES67 In 1L","aes67"), inp("aes-i1r","AES67 In 1R","aes67"),
           ...lr(inp, "aoip-i", "AoIP In", "aoip", 1, 8),
         ],
@@ -81,66 +80,77 @@ class Component extends DCLogic {
           ...lr(out, "zone", "Zone", "analog_audio", 1, 8),
           ...lr(out, "aout", "Analog Line Out", "analog_audio", 1, 4),
           ...seq(out, "ms-tx", "MediaStream # Tx", "aoip", 1, 8),
-          out("tos-tx1","Toslink 1 NAX Tx","aoip"), out("tos-tx2","Toslink 2 NAX Tx","aoip"),
-          out("spdif-tx1","S/PDIF 1 NAX Tx","aoip"), out("spdif-tx2","S/PDIF 2 NAX Tx","aoip"),
-          ...seq(out, "rca-tx", "RCA # NAX Tx", "aoip", 1, 4),
+          out("tos-tx1","Toslink 1 NAX Tx","toslink"), out("tos-tx2","Toslink 2 NAX Tx","toslink"),
+          out("spdif-tx1","S/PDIF 1 NAX Tx","spdif"), out("spdif-tx2","S/PDIF 2 NAX Tx","spdif"),
+          ...seq(out, "rca-tx", "RCA # NAX Tx", "rca", 1, 4),
         ] },
       { id: "dm-nax-2xlri", name: "DM-NAX-2XLRI", model: "DM-NAX-2XLRI", manufacturer: "Crestron", room: "studio", type: "AUDIO-DISTRIBUTION", status: "Online", nax: true, source: "discovered",
-        inputs: [inp("ain1","Analog XLR In 1","analog_audio"), inp("ain2","Analog XLR In 2","analog_audio"), inp("aes-i1l","AES67 In 1L","aes67"), inp("aes-i1r","AES67 In 1R","aes67")],
+        inputs: [inp("ain1","Analog XLR In 1","analog_audio"), inp("ain2","Analog XLR In 2","analog_audio"), inp("aoip-i1l","AoIP In 1L","aoip"), inp("aoip-i1r","AoIP In 1R","aoip")],
         outputs: [out("aout1","Analog Line Out 1","analog_audio"), out("aout2","Analog Line Out 2","analog_audio"), out("aoip-o1l","AoIP Out 1L","aoip"), out("aoip-o1r","AoIP Out 1R","aoip")] },
-      { id: "eq-nax-aio", name: "DM-NAX-AUD-IO", model: "DM-NAX-AUD-IO", manufacturer: "Crestron", room: "family-room", type: "DSP", status: "Online", nax: true, source: "discovered",
-        inputs: [inp("ain1","Analog Line In 1","analog_audio"), inp("ain2","Analog Line In 2","analog_audio"), inp("aoip-i1l","AoIP In 1L","aoip"), inp("aoip-i1r","AoIP In 1R","aoip")],
-        outputs: [out("aout1","Analog Line Out 1","analog_audio"), out("aout2","Analog Line Out 2","analog_audio"), out("aoip-o1l","AoIP Out 1L","aoip"), out("aoip-o1r","AoIP Out 1R","aoip")] },
-      { id: "eq-nax-amp", name: "DM-NAX-AMP-X300", model: "DM-NAX-AMP-X300", manufacturer: "Crestron", room: "equipment-room", type: "Amplifier", status: "Online", nax: true, source: "discovered",
-        inputs: [inp("ain1","Analog In 1","analog_audio"), inp("ain2","Analog In 2","analog_audio"), inp("ain3","Analog In 3","analog_audio"), inp("ain4","Analog In 4","analog_audio"),
-                 inp("aoip-i1l","AoIP In 1L","aoip"), inp("aoip-i1r","AoIP In 1R","aoip"), inp("aoip-i2l","AoIP In 2L","aoip"), inp("aoip-i2r","AoIP In 2R","aoip")],
-        outputs: [out("amp1","Amp Out 1","analog_audio"), out("amp2","Amp Out 2","analog_audio"), out("amp3","Amp Out 3","analog_audio"), out("amp4","Amp Out 4","analog_audio"),
-                  out("aoip-o1l","AoIP Out 1L","aoip"), out("aoip-o1r","AoIP Out 1R","aoip"), out("aoip-o2l","AoIP Out 2L","aoip"), out("aoip-o2r","AoIP Out 2R","aoip")] },
       { id: "fr-tv", name: "Samsung TV", model: "Samsung QN83S90DAEXZA", manufacturer: "Samsung", room: "family-room", type: "Display", status: "Online", source: "discovered",
         inputs: [inp("hdmi1","HDMI 1","hdmi"), inp("hdmi2","HDMI 2","hdmi"), inp("hdmi3","HDMI 3 (eARC)","hdmi"), inp("hdmi4","HDMI 4","hdmi")],
-        outputs: [out("rv1","Room Video 1","hdmi"), out("ra1","Room Audio 1","analog_audio"), out("opt","Optical Out","digital_audio")] },
-      { id: "fr-nax-xsp", name: "DM-NAX-XSP", model: "DM-NAX-XSP", manufacturer: "Crestron", room: "family-room", type: "DSP", status: "Online", source: "discovered",
-        inputs: [inp("hdmi","HDMI (eARC)","hdmi")],
-        outputs: [out("hdmi","HDMI","hdmi"), ],
-        outputs: [out("ra1","Room Audio 1","analog_audio")] },
-      { id: "fr-sb", name: "Sonos Soundbar", model: "Sonos Arc", manufacturer: "Sonos", room: "family-room", type: "Speaker", status: "Online", source: "discovered",
-        inputs: [inp("hdmi","HDMI (eARC)","hdmi")],
-        outputs: [out("aoip-o1l","AoIP Out 1L","aoip")] },
-      { id: "lr-appletv", name: "Apple TV", model: "Apple TV 4K (3rd Gen)", manufacturer: "Apple", room: "equipment-room", type: "Media Player", status: "Online", source: "discovered",
-        inputs: [], outputs: [out("hdmi-out","HDMI Out (eARC)","hdmi"), out("bt-l","Bluetooth Out L","bluetooth"), out("bt-r","Bluetooth Out R","bluetooth")] },
+        outputs: [out("rv1","Room Video 1","hdmi"), out("ra1","Room Audio 1","analog_audio"), out("opt","Optical Out","spdif")] },
       { id: "lr-tv", name: "LG TV", model: "LG OLED77C3", manufacturer: "LG", room: "living-room", type: "Display", status: "Online", source: "discovered",
-        inputs: [inp("hdmi1","HDMI 1","hdmi"), inp("hdmi2","HDMI 2","hdmi"), inp("hdmi3","HDMI 3 (eARC)","hdmi"), inp("hdmi4","HDMI 4","hdmi")],
-        outputs: [out("rv1","Room Video 1","hdmi"), out("ra1","Room Audio 1","analog_audio"), out("opt","Optical Out","digital_audio")] },
-      { id: "lr-btio", name: "DM-NAX-BTIO-1G", model: "DM-NAX-BTIO-1G", manufacturer: "Crestron", room: "living-room", type: "DSP", status: "Online", nax: true, source: "discovered",
+        inputs: [inp("hdmi1","HDMI 1","hdmi"), inp("hdmi2","HDMI 2 (eARC)","hdmi"), inp("hdmi3","HDMI 3","hdmi"), inp("hdmi4","HDMI 4","hdmi")],
+        outputs: [out("rv1","Room Video 1","hdmi"), out("ra1","Room Audio 1","analog_audio"), out("opt","Optical Out","spdif")] },
+      { id: "lr-btio", name: "DM-NAX-BTIO-100-1G", model: "DM-NAX-BTIO-100-1G", manufacturer: "Crestron", room: "living-room", type: "DSP", status: "Online", nax: true, source: "discovered",
         inputs: [inp("ain1","Analog Line In 1","analog_audio"), inp("ain2","Analog Line In 2","analog_audio"), inp("bt-l","Bluetooth In L","bluetooth"), inp("bt-r","Bluetooth In R","bluetooth"),
                  inp("aoip-i1l","AoIP In 1L","aoip"), inp("aoip-i1r","AoIP In 1R","aoip"), inp("aoip-i2l","AoIP In 2L","aoip"), inp("aoip-i2r","AoIP In 2R","aoip")],
-        outputs: [out("aout-l","Analog Line Out L","analog_audio"), out("aout-r","Analog Line Out R","analog_audio"), out("usb-l","USB Out L","digital_audio"), out("usb-r","USB Out R","digital_audio"),
+        outputs: [out("aout-l","Analog Line Out L","analog_audio"), out("aout-r","Analog Line Out R","analog_audio"), out("usb-l","USB Out L","usb"), out("usb-r","USB Out R","usb"),
                   out("aoip-o1l","AoIP Out 1L","aoip"), out("aoip-o1r","AoIP Out 1R","aoip"), out("aoip-o2l","AoIP Out 2L","aoip"), out("aoip-o2r","AoIP Out 2R","aoip")] },
-      { id: "dm-nvx-364-e1", name: "DM-NVX-384 Encoder", model: "DM-NVX-384", manufacturer: "Crestron", room: "equipment-room", type: "VIDEO-DISTRIBUTION", status: "Online", nax: false, source: "discovered",
-        inputs: [inp("hdmi1","HDMI1","hdmi"), inp("hdmi2","HDMI2 (eARC)","hdmi")],
-        outputs: [out("hdmi","HDMI (eARC)","hdmi"), out("aout1","Analog Line Out 1","analog_audio"), out("aoip-o1l","AoIP Out 1L","aoip"), out("aoip-o1r","AoIP Out 1R","aoip"), out("avoip-o1l","AVoIP Out 1L","aoip"), out("aoip-o1r","AoIP Out 1R","aoip")] },
-      { id: "dm-nvx-364-e2", name: "DM-NVX-384 Encoder", model: "DM-NVX-384", manufacturer: "Crestron", room: "equipment-room", type: "VIDEO-DISTRIBUTION", status: "Online", nax: false, source: "discovered",
-        inputs: [inp("hdmi1","HDMI1","hdmi"), inp("hdmi2","HDMI2 (eARC)","hdmi")],
+      { id: "lr-appletv", name: "Apple TV", model: "Apple TV 4K (3rd Gen)", manufacturer: "Apple", room: "equipment-room", type: "Media Player", status: "Online", source: "discovered",
+        inputs: [], outputs: [out("hdmi-out","HDMI Out (eARC)","hdmi"), out("bt-l","Bluetooth Out L","bluetooth"), out("bt-r","Bluetooth Out R","bluetooth")] },
+      { id: "dm-nvx-364-tx1", name: "DM-NVX-384-TX", model: "DM-NVX-384", manufacturer: "Crestron", room: "equipment-room", type: "VIDEO-DISTRIBUTION", status: "Online", nax: false, source: "discovered",
+        inputs: [inp("hdmi1","HDMI1","hdmi"), inp("hdmi2","HDMI2 (eARC)","hdmi"), inp("aoip-i1l","AoIP In 1L","aoip"), inp("aoip-i1r","AoIP In 1R","aoip")],
+        outputs: [out("hdmi","HDMI (eARC)","hdmi"), out("aout1","Analog Line Out 1","analog_audio"), out("avoip-o1","AVoIP Out","avoip"), out("aoip-o1l","AoIP Out 1L","aoip"), out("aoip-o1r","AoIP Out 1R","aoip")] },
+      { id: "dm-nvx-364-rx1", name: "DM-NVX-384-RX", model: "DM-NVX-384", manufacturer: "Crestron", room: "living-room", type: "VIDEO-DISTRIBUTION", status: "Online", nax: false, source: "discovered",
+        inputs: [inp("hdmi1","HDMI1","hdmi"), inp("hdmi2","HDMI2 (eARC)","hdmi"), inp("avoip-i1","AVoIP In","avoip"), inp("aoip-i1l","AoIP In 1L","aoip"), inp("aoip-i1r","AoIP In 1R","aoip")],
         outputs: [out("hdmi","HDMI (eARC)","hdmi"), out("aout1","Analog Line Out 1","analog_audio"), out("aoip-o1l","AoIP Out 1L","aoip"), out("aoip-o1r","AoIP Out 1R","aoip")] },
+      { id: "dm-nvx-364-rx2", name: "DM-NVX-384-RX", model: "DM-NVX-384", manufacturer: "Crestron", room: "family-room", type: "VIDEO-DISTRIBUTION", status: "Online", nax: false, source: "discovered",
+        inputs: [inp("hdmi1","HDMI1","hdmi"), inp("hdmi2","HDMI2 (eARC)","hdmi"), inp("avoip-i1","AVoIP In","avoip"), inp("aoip-i1l","AoIP In 1L","aoip"), inp("aoip-i1r","AoIP In 1R","aoip")],
+        outputs: [out("hdmi","HDMI (eARC)","hdmi"), out("aout1","Analog Line Out 1","analog_audio"), out("aoip-o1l","AoIP Out 1L","aoip"), out("aoip-o1r","AoIP Out 1R","aoip")] },
+      // IC6-AW-W-T-EACH — passive in-ceiling speaker sold individually. It is not a network
+      // device: its only connection is a single speaker-level pair from an amplifier output
+      // (8Ω low-impedance or 70/100V constant-voltage tap). No outputs, no AoIP/HDMI.
+      ...["living-room", "living-room", "family-room", "family-room"].map((room, i) => ({
+        id: "ic6-aw-w-t-each" + (i + 1),
+        name: "Crestron® Ultimate Spkr " + (i % 2 === 0 ? "L" : "R"),
+        model: "IC6-AW-W-T-EACH", manufacturer: "Crestron", room, type: "Speaker", status: "Online", nax: false, source: "discovered",
+        inputs: [inp("spk-in", "Speaker In (8Ω / 70V / 100V)", "analog_audio")],
+        outputs: [],
+      })),
     ];
   })();
 
+  // Troubleshooting-mode scenario routes (prototype only). These deliberately use signal types
+  // that are non-routeable in the MVP (AVoIP / AoIP), so they can only be created by entering
+  // troubleshooting mode — they represent streams already established on the hardware.
+  TROUBLESHOOT_ROUTES = [
+    { id: "ts1", fromDevice: "dm-nvx-364-tx1", fromPort: "avoip-o1", toDevice: "dm-nvx-364-rx1", toPort: "avoip-i1", signalType: "avoip" },
+    { id: "ts2", fromDevice: "dm-nvx-364-tx1", fromPort: "aoip-o1l", toDevice: "eq-nax-8zsa", toPort: "aoip-i1l", signalType: "aoip" },
+    { id: "ts3", fromDevice: "dm-nvx-364-tx1", fromPort: "aoip-o1r", toDevice: "eq-nax-8zsa", toPort: "aoip-i1r", signalType: "aoip" },
+    { id: "ts4", fromDevice: "eq-nax-amp", fromPort: "aoip-o1l", toDevice: "dm-nvx-364-rx1", toPort: "aoip-i1l", signalType: "aoip" },
+    { id: "ts5", fromDevice: "eq-nax-amp", fromPort: "aoip-o1r", toDevice: "dm-nvx-364-rx1", toPort: "aoip-i1r", signalType: "aoip" },
+    { id: "ts6", fromDevice: "dm-nvx-364-tx1", fromPort: "avoip-o1", toDevice: "dm-nvx-364-rx2", toPort: "avoip-i1", signalType: "avoip" },
+  ];
+
   INITIAL_ROUTES = [
     { id: "r1", fromDevice: "lr-appletv", fromPort: "hdmi-out", toDevice: "lr-tv", toPort: "hdmi1", signalType: "hdmi" },
-    { id: "r7", fromDevice: "eq-nax-aio", fromPort: "aoip-o1l", toDevice: "eq-nax-amp", toPort: "aoip-i1l", signalType: "aoip" },
-    { id: "r8", fromDevice: "eq-nax-aio", fromPort: "aoip-o1r", toDevice: "eq-nax-amp", toPort: "aoip-i1r", signalType: "aoip" },
-    { id: "r9", fromDevice: "lr-btio", fromPort: "aoip-o1l", toDevice: "eq-nax-amp", toPort: "aoip-i2l", signalType: "aoip" },
-    { id: "r10", fromDevice: "lr-btio", fromPort: "aoip-o1r", toDevice: "eq-nax-amp", toPort: "aoip-i2r", signalType: "aoip" },
+    { id: "r7", fromDevice: "eq-nax-aio", fromPort: "aoip-o1l", toDevice: "eq-nax-8zsa", toPort: "aoip-i1l", signalType: "aoip" },
+    { id: "r8", fromDevice: "eq-nax-aio", fromPort: "aoip-o1r", toDevice: "eq-nax-8zsa", toPort: "aoip-i1r", signalType: "aoip" },
+    { id: "r9", fromDevice: "lr-btio", fromPort: "aoip-o1l", toDevice: "eq-nax-8zsa", toPort: "aoip-i2l", signalType: "aoip" },
+    { id: "r10", fromDevice: "lr-btio", fromPort: "aoip-o1r", toDevice: "eq-nax-8zsa", toPort: "aoip-i2r", signalType: "aoip" },
   ];
 
   ROOM_LAYOUT = {
     "equipment-room": { x: 500, y: 40, label: "Equipment Room" },
     "kitchen": { x: 700, y: 700, label: "Kitchen" },
     "living-room": { x: 0, y: 700, label: "Living Room" },
+    "family-room": { x: 1400, y: 700, label: "Family Room" },
   };
 
-  SIGNAL_COLORS = { hdmi: "#003B71", analog_audio: "#CF9F02", digital_audio: "#007CA0", aoip: "#43C5E3", aes67: "#6F7DE0", avoip: "#A79F88", bluetooth: "#1AA3C6" };
-  SIGNAL_LABELS = { hdmi: "HDMI", analog_audio: "Analog", digital_audio: "Digital", aoip: "AoIP", aes67: "AES67", avoip: "AVoIP", bluetooth: "BT" };
+  SIGNAL_COLORS = { hdmi: "#003B71", analog_audio: "#CF9F02", toslink: "#007CA0", spdif: "#E0662F", rca: "#8E5AB8", usb: "#0D441D", aoip: "#43C5E3", aes67: "#6F7DE0", avoip: "#A79F88", bluetooth: "#1AA3C6" };
+  SIGNAL_LABELS = { hdmi: "HDMI", analog_audio: "Analog", toslink: "Toslink", spdif: "S/PDIF", rca: "RCA", usb: "USB", aoip: "AoIP", avoip: "AVoIP", bluetooth: "BT" };
 
   // ============ INTERNAL DSP MODEL (read-only chain map — C-14 / C-17) ============
   // Sourced from devices/8ZSA DSP.csv. The device's DSP is not one flat chain: input-side blocks
@@ -188,6 +198,8 @@ class Component extends DCLogic {
     routes: this.INITIAL_ROUTES,
     positions: this.buildDevicePositions(),
     routingView: "canvas",
+    troubleshoot: false,
+    tsDisplaced: [],
     signalFilter: this.buildSignalFilter(),
     deviceDsp: {},
     collapsedDevices: {},
@@ -344,7 +356,10 @@ class Component extends DCLogic {
   deviceById(id) { return this.DEVICES.find(d => d.id === id); }
   // Bluetooth ports are shown on devices for completeness but are not routeable —
   // they render greyed-out and never expose valid connection options.
-  isRouteable(signal) { return signal !== "bluetooth"; }
+  // Non-routeable signal types are listed explicitly; everything else (hdmi, analog_audio,
+  // digital_audio, spdif, rca, …) is routeable and can be connected on the canvas and in the Matrix.
+  NON_ROUTEABLE = ["bluetooth", "aoip", "avoip"];
+  isRouteable(signal) { return !this.NON_ROUTEABLE.includes(signal); }
   signalsCompatible(a, b) { return !!a && !!b && a === b && this.isRouteable(a); }
 
   // ============ SIGNAL-TYPE FILTER (B-34) ============
@@ -372,19 +387,23 @@ class Component extends DCLogic {
     const R = React.createElement;
     const legendKeys = Object.keys(this.SIGNAL_LABELS).filter(k => this.DEVICES.some(d => [...d.inputs, ...d.outputs].some(p => p.signal === k)));
     const anyHidden = legendKeys.some(k => !this.signalVisible(k));
-    return R("div", { style: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, padding: "8px 10px", background: "#fff", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", ...(extraStyle || {}) } },
-      R("span", { style: { fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--fg-subtle)", marginRight: 2 } }, "Filter"),
+    // Single flat row — never wraps; if the system has more signal types than fit, the key
+    // scrolls horizontally rather than growing into a second line.
+    return R("div", { style: { display: "flex", flexWrap: "nowrap", alignItems: "center", gap: 6, padding: "6px 10px", background: "#fff", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", overflowX: "auto", overflowY: "hidden", whiteSpace: "nowrap", ...(extraStyle || {}) } },
+      R("span", { style: { fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--fg-subtle)", marginRight: 2, flexShrink: 0 } }, "Filter"),
       legendKeys.map(k => {
         const on = this.signalVisible(k);
         const routeable = this.isRouteable(k);
         const dotCol = !routeable ? "var(--neutral-400)" : this.SIGNAL_COLORS[k];
         return R("button", { key: k, onClick: () => this.toggleSignalFilter(k), className: "cp-btn", title: !routeable ? this.SIGNAL_LABELS[k] + " is not routeable" : (on ? "Hide " + this.SIGNAL_LABELS[k] : "Show " + this.SIGNAL_LABELS[k]),
-          style: { display: "flex", alignItems: "center", gap: 5, fontSize: 10.5, fontWeight: 600, cursor: "pointer", padding: "3px 8px", borderRadius: "var(--radius-pill)",
+          style: { display: "flex", alignItems: "center", gap: 5, flexShrink: 0, whiteSpace: "nowrap", fontSize: 10.5, fontWeight: 600, cursor: "pointer", padding: "3px 8px", borderRadius: "var(--radius-pill)",
             border: `1px solid ${on ? (routeable ? this.SIGNAL_COLORS[k] : "var(--border)") : "var(--border)"}`, background: on ? "#fff" : "var(--neutral-100)", color: on ? "var(--fg)" : "var(--fg-subtle)", opacity: on ? 1 : 0.6, transition: "all 0.15s" } },
           R("div", { style: { width: 10, height: 10, borderRadius: "50%", boxSizing: "border-box", border: `2px solid ${on ? dotCol : "var(--neutral-300)"}`, background: !routeable ? "var(--neutral-300)" : (on ? dotCol : "#fff") } }),
-          this.SIGNAL_LABELS[k] + (routeable ? "" : " · not routeable"));
+          // Non-routeable types keep the grey dot + tooltip; the long "· not routeable" suffix
+          // is dropped so the key stays on one line.
+          this.SIGNAL_LABELS[k]);
       }),
-      anyHidden ? R("button", { onClick: () => this.setAllSignalFilters(true), className: "cp-btn", style: { fontSize: 10, fontWeight: 700, cursor: "pointer", padding: "3px 8px", borderRadius: "var(--radius-pill)", border: "none", background: "var(--blue-50)", color: "var(--crestron-true-blue)" } }, "Show all") : null);
+      anyHidden ? R("button", { onClick: () => this.setAllSignalFilters(true), className: "cp-btn", style: { fontSize: 10, fontWeight: 700, cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap", padding: "3px 8px", borderRadius: "var(--radius-pill)", border: "none", background: "var(--blue-50)", color: "var(--crestron-true-blue)" } }, "Show all") : null);
   }
 
   // ============ LIFECYCLE / PERSISTENCE (A-02) ============
@@ -407,7 +426,11 @@ class Component extends DCLogic {
   }
   persist() {
     try {
-      const { positions, routes, deviceDsp, hiddenPorts, vp, expanded, telemetry } = this.state;
+      const { positions, deviceDsp, hiddenPorts, vp, expanded, telemetry } = this.state;
+      // Troubleshooting-mode scenario routes are session-only — persist the real routing,
+      // including anything they temporarily displaced.
+      const tsIds = new Set(this.TROUBLESHOOT_ROUTES.map(r => r.id));
+      const routes = [...this.state.routes.filter(r => !tsIds.has(r.id)), ...this.state.tsDisplaced];
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ positions, routes, deviceDsp, hiddenPorts, vp, expanded, telemetry }));
     } catch (e) {}
   }
@@ -591,6 +614,38 @@ class Component extends DCLogic {
   setTab(tab) { this.setState({ tab }); }
   setSel(sel) { this.setState({ sel }); }
   setRoutingView(v) { this.setState({ routingView: v }); }
+
+  // Troubleshooting mode: overlay the live streams that exist on the hardware but cannot be
+  // drawn by hand in the MVP (AVoIP / AoIP are non-routeable). Toggling off restores exactly
+  // the routing that was there before, including any route displaced by a scenario route.
+  toggleTroubleshoot() {
+    this.setState(prev => {
+      if (prev.troubleshoot) {
+        const tsIds = new Set(this.TROUBLESHOOT_ROUTES.map(r => r.id));
+        return { troubleshoot: false, routes: [...prev.routes.filter(r => !tsIds.has(r.id)), ...prev.tsDisplaced], tsDisplaced: [], tracedChain: null };
+      }
+      const targets = new Set(this.TROUBLESHOOT_ROUTES.map(r => r.toDevice + "|" + r.toPort));
+      const displaced = prev.routes.filter(r => targets.has(r.toDevice + "|" + r.toPort));
+      const kept = prev.routes.filter(r => !targets.has(r.toDevice + "|" + r.toPort));
+      // A scenario endpoint that is hidden (individually, by collapse, or by the signal-type
+      // filter) would drop out of the port layout and its wire would attach to the wrong row.
+      // Force every endpoint these routes touch to be visible before drawing them.
+      const hiddenPorts = { ...prev.hiddenPorts }, collapsedDevices = { ...prev.collapsedDevices };
+      const signalFilter = { ...prev.signalFilter };
+      this.TROUBLESHOOT_ROUTES.forEach(r => {
+        signalFilter[r.signalType] = true;
+        [[r.fromDevice, "output:" + r.fromPort], [r.toDevice, "input:" + r.toPort]].forEach(([devId, key]) => {
+          if (hiddenPorts[devId]) {
+            const left = hiddenPorts[devId].filter(k => k !== key);
+            if (left.length) hiddenPorts[devId] = left; else delete hiddenPorts[devId];
+          }
+          delete collapsedDevices[devId];
+        });
+      });
+      return { troubleshoot: true, routingView: "canvas", routes: [...kept, ...this.TROUBLESHOOT_ROUTES], tsDisplaced: displaced, tracedChain: null, hiddenPorts, collapsedDevices, signalFilter };
+    });
+    this.track("canvasInteractions", this.state.troubleshoot ? "Exit troubleshooting mode" : "Enter troubleshooting mode");
+  }
   toggleFloor(id) { this.setState(p => ({ expanded: { ...p.expanded, [id]: !p.expanded[id] } })); }
   toggleRoomExpand(id) { this.setState(p => ({ expandedRooms: { ...p.expandedRooms, [id]: p.expandedRooms[id] === false ? true : false } })); }
   isRoomExpanded(id) { return this.state.expandedRooms[id] !== false; }
@@ -737,7 +792,10 @@ class Component extends DCLogic {
       s.sel.type !== "device" ? R("div", { style: { display: "flex", borderRadius: "var(--radius-md)", overflow: "hidden", border: "1px solid var(--border)" } },
         ["canvas", "grid"].map(v => R("button", { key: v, onClick: () => this.setRoutingView(v), className: "cp-btn",
           style: { display: "flex", alignItems: "center", gap: 6, padding: "5px 14px", fontSize: 12, border: "none", cursor: "pointer", background: s.routingView === v ? "var(--crestron-true-blue)" : "#fff", color: s.routingView === v ? "#fff" : "var(--fg-muted)", fontWeight: 600 } },
-          this.ic(v === "canvas" ? "route" : "grid", 14, s.routingView === v ? "#fff" : "var(--fg-muted)"), v === "canvas" ? "Routing Map" : "Matrix"))) : null,
+          this.ic(v === "canvas" ? "route" : "grid", 14, s.routingView === v ? "#fff" : "var(--fg-muted)"), v === "canvas" ? "Routing Map" : "Matrix")).concat([
+          R("button", { key: "ts", onClick: () => this.toggleTroubleshoot(), className: "cp-btn", title: s.troubleshoot ? "Exit troubleshooting mode" : "Enter troubleshooting mode",
+            style: { display: "flex", alignItems: "center", gap: 6, padding: "5px 14px", fontSize: 12, border: "none", borderLeft: "1px solid var(--border)", cursor: "pointer", background: s.troubleshoot ? "var(--danger)" : "#fff", color: s.troubleshoot ? "#fff" : "var(--fg-muted)", fontWeight: 600 } },
+            this.ic("target", 14, s.troubleshoot ? "#fff" : "var(--fg-muted)"), "Troubleshoot")])) : null,
     );
   }
 
@@ -944,7 +1002,7 @@ class Component extends DCLogic {
         R("button", { onClick: () => this.clearTrace(), className: "cp-btn", style: { padding: "3px 11px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--bg-subtle)", fontSize: 11, cursor: "pointer", color: "var(--fg-muted)", fontWeight: 600 } }, "Clear"),
       ) : null,
       // Legend / signal-type filter (B-34)
-      this.SignalLegend({ position: "absolute", top: 14, left: 14, zIndex: 40, background: "rgba(255,255,255,0.94)", boxShadow: "var(--shadow-xs)", maxWidth: 360 }),
+      this.SignalLegend({ position: "absolute", top: 14, left: 14, zIndex: 40, background: "rgba(255,255,255,0.94)", boxShadow: "var(--shadow-xs)", maxWidth: "calc(100% - 28px)" }),
       // Zoom controls
       R("div", { style: { position: "absolute", bottom: 16, right: 16, zIndex: 50, display: "flex", gap: 5 } },
         R("button", { onClick: () => this.setZoom(1.3), className: "cp-btn", style: { width: 34, height: 34, borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "var(--shadow-xs)" } }, this.ic("plus", 16, "var(--fg)")),
@@ -1031,7 +1089,9 @@ class Component extends DCLogic {
         // A wire is "flowing" when live signal reaches the receiving device's input port. When
         // tracing, that is the traced signal reaching the port; otherwise the source is emitting
         // (not blocked/muted/zero-gain), so the downstream input is detecting audio/video.
-        const flowing = tracing ? (inChain && hasSig) : !this.isBlocking(r.fromDevice);
+        // Flow bubbles are a troubleshooting affordance only — outside troubleshooting mode the
+        // canvas stays static so the schematic reads cleanly while designing/routing.
+        const flowing = s.troubleshoot && (tracing ? (inChain && hasSig) : !this.isBlocking(r.fromDevice));
         const outOfScope = scopeIds && !(scopeIds.has(r.fromDevice) && scopeIds.has(r.toDevice));
         const opacity = tracing ? (inChain ? 1 : 0.07) : (outOfScope ? 0.1 : 1);
         const color = tracing && inChain ? (hasSig ? col : "var(--danger)") : col;
