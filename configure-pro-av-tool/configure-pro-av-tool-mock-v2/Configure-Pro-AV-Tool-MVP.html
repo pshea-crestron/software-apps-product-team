@@ -109,13 +109,15 @@ class Component extends DCLogic {
       { id: "dm-nvx-364-rx2", name: "DM-NVX-384-RX", model: "DM-NVX-384", manufacturer: "Crestron", room: "family-room", type: "VIDEO-DISTRIBUTION", status: "Online", nax: false, source: "discovered",
         inputs: [inp("hdmi1","HDMI1","hdmi"), inp("hdmi2","HDMI2 (eARC)","hdmi"), inp("avoip-i1","AVoIP In","avoip"), inp("aoip-i1l","AoIP In 1L","aoip"), inp("aoip-i1r","AoIP In 1R","aoip")],
         outputs: [out("hdmi","HDMI (eARC)","hdmi"), out("aout1","Analog Line Out 1","analog_audio"), out("aoip-o1l","AoIP Out 1L","aoip"), out("aoip-o1r","AoIP Out 1R","aoip")] },
-      // IC6-AW-W-T-EACH — passive in-ceiling speaker sold individually. It is not a network
-      // device: its only connection is a single speaker-level pair from an amplifier output
-      // (8Ω low-impedance or 70/100V constant-voltage tap). No outputs, no AoIP/HDMI.
-      ...["living-room", "living-room", "family-room", "family-room"].map((room, i) => ({
-        id: "ic6-aw-w-t-each" + (i + 1),
-        name: "Crestron® Ultimate Spkr " + (i % 2 === 0 ? "L" : "R"),
-        model: "IC6-AW-W-T-EACH", manufacturer: "Crestron", room, type: "Speaker", status: "Online", nax: false, source: "discovered",
+      // Passive in-ceiling speakers are modeled as a single room-level audio destination named
+      // for the room that hears the audio, rather than as individual L/R speaker nodes. They are
+      // not network devices: the only connection is a speaker-level pair from an amplifier output
+      // (8Ω low-impedance or 70/100V constant-voltage tap). No outputs, no AoIP/HDMI, and no way
+      // to report receive status — see canReportRx().
+      ...[{ room: "living-room", name: "Living Room" }, { room: "family-room", name: "Family Room" }].map(r => ({
+        id: "spk-" + r.room,
+        name: r.name,
+        model: "IC6-AW-W-T-EACH", manufacturer: "Crestron", room: r.room, type: "Speaker", status: "Online", nax: false, source: "discovered",
         inputs: [inp("spk-in", "Speaker In (8Ω / 70V / 100V)", "analog_audio")],
         outputs: [],
       })),
