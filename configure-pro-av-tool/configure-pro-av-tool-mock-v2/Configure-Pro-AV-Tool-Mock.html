@@ -456,7 +456,7 @@ class Component extends DCLogic {
     const tc = s.tracedChain;
     const blockingChanged = snap.deviceDsp !== s.deviceDsp || snap.outOfOrder !== s.outOfOrder || snap.routes !== s.routes;
     this._snap = { ...s };
-    if (tc && tc.routeIds && tc.routeIds.size && blockingChanged) this.buildTrace([...tc.routeIds]);
+    if (tc && tc.origin && blockingChanged) this.buildTrace(tc.origin);
   }
 
   // ============ TELEMETRY (A-27/28/29/30/31/33) ============
@@ -794,6 +794,19 @@ class Component extends DCLogic {
   toggleOutOfOrder(devId) { this.setState(prev => { const set = new Set(prev.outOfOrder); set.has(devId) ? set.delete(devId) : set.add(devId); return { outOfOrder: [...set] }; }); }
 
   // ============ SIGNAL-FLOW TRACE (A-10) ============
+  // Signal presence is reported by the RECEIVING device at its input port. Only networked
+  // Crestron devices (NAX / NVX) expose that Rx status today — we have no way to read audio or
+  // video receive state from third-party TVs, soundbars, or from passive speakers, which have
+  // no network interface at all. A wire into any of those is drawn static rather than animated,
+  // so the canvas never implies a signal reading we cannot actually take.
+  canReportRx(devId) {
+    const dev = this.deviceById(devId);
+    if (!dev) return false;
+    if (dev.manufacturer !== "Crestron") return false;
+    if (dev.type === "Speaker") return false; // passive / speaker-level, not networked
+    return true;
+  }
+
   isBlocking(devId) {
     if (this.state.outOfOrder.includes(devId)) return true;
     const dsp = this.state.deviceDsp[devId];
@@ -801,19 +814,51 @@ class Component extends DCLogic {
     if (dsp && typeof dsp.gain === "number" && dsp.gain <= -80) return true;
     return false;
   }
-  buildTrace(startRouteIds) {
+  // Directed reachability from a set of seed devices. `seedUp` walks BACKWARD along each wire
+  // (to -> from) to collect everything that can feed the seed; `seedDown` walks FORWARD
+  // (from -> to) to collect everything the seed can feed. Signal direction is never reversed
+  // mid-path, so a device only joins the trace if a real end-to-end signal path exists between
+  // it and the selection. This is what keeps siblings out: selecting a terminating device such
+  // as a speaker highlights the amp that feeds it and that amp's own sources, but NOT the other
+  // things that amp also feeds, and not a TV whose output feeds nothing on the path.
+  traceReach(seedUp, seedDown) {
     const routes = this.state.routes;
-    const allRouteIds = new Set(); const allDeviceIds = new Set();
-    const queue = [...startRouteIds];
-    while (queue.length) {
-      const rid = queue.pop();
-      if (allRouteIds.has(rid)) continue;
-      const r = routes.find(rt => rt.id === rid);
-      if (!r) continue;
-      allRouteIds.add(rid); allDeviceIds.add(r.fromDevice); allDeviceIds.add(r.toDevice);
-      routes.filter(rt => rt.fromDevice === r.toDevice && !allRouteIds.has(rt.id)).forEach(rt => queue.push(rt.id));
-      routes.filter(rt => rt.toDevice === r.fromDevice && !allRouteIds.has(rt.id)).forEach(rt => queue.push(rt.id));
+    const routeIds = new Set(), deviceIds = new Set();
+    const walk = (seed, backward) => {
+      const queue = [...seed], seen = new Set(seed);
+      seed.forEach(d => deviceIds.add(d));
+      while (queue.length) {
+        const d = queue.pop();
+        routes.forEach(r => {
+          const near = backward ? r.toDevice : r.fromDevice;
+          const far = backward ? r.fromDevice : r.toDevice;
+          if (near !== d) return;
+          routeIds.add(r.id); deviceIds.add(far);
+          if (!seen.has(far)) { seen.add(far); queue.push(far); }
+        });
+      }
+    };
+    walk(seedUp, true);
+    walk(seedDown, false);
+    return { routeIds, deviceIds };
+  }
+  // `origin` is { kind: "device" | "route", id }. A device origin traces both directions from
+  // that device; a route origin traces upstream of its source and downstream of its destination,
+  // so selecting a wire lights up the full path that wire is part of.
+  buildTrace(origin) {
+    const routes = this.state.routes;
+    let reach;
+    if (origin && origin.kind === "route") {
+      const r = routes.find(rt => rt.id === origin.id);
+      if (!r) { this.setState({ tracedChain: null }); return; }
+      reach = this.traceReach([r.fromDevice], [r.toDevice]);
+      reach.routeIds.add(r.id);
+      reach.deviceIds.add(r.fromDevice); reach.deviceIds.add(r.toDevice);
+    } else {
+      if (!origin || !this.deviceById(origin.id)) { this.setState({ tracedChain: null }); return; }
+      reach = this.traceReach([origin.id], [origin.id]);
     }
+    const allRouteIds = reach.routeIds, allDeviceIds = reach.deviceIds;
     const chainRoutes = routes.filter(r => allRouteIds.has(r.id));
     const deviceHasSignalOut = new Set(); const signalRouteIds = new Set(); const noSignalPorts = [];
     const devicesWithChainInput = new Set(chainRoutes.map(r => r.toDevice));
@@ -831,14 +876,13 @@ class Component extends DCLogic {
       });
     }
     chainRoutes.forEach(r => { if (!signalRouteIds.has(r.id)) noSignalPorts.push({ devId: r.toDevice, portId: r.toPort }); });
-    this.setState({ tracedChain: { routeIds: allRouteIds, deviceIds: allDeviceIds, signalRouteIds, noSignalPorts } });
+    this.setState({ tracedChain: { origin, routeIds: allRouteIds, deviceIds: allDeviceIds, signalRouteIds, noSignalPorts } });
   }
-  traceFromRoute(routeId) { this.track("traceSessions", "Trace from wire"); this.buildTrace([routeId]); }
+  traceFromRoute(routeId) { this.track("traceSessions", "Trace from wire"); this.buildTrace({ kind: "route", id: routeId }); }
   traceFromDevice(devId) {
     this.track("traceSessions", "Trace from " + (this.deviceById(devId)?.name || devId));
-    const devRoutes = this.state.routes.filter(r => r.fromDevice === devId || r.toDevice === devId);
-    if (!devRoutes.length) { this.setState({ tracedChain: { routeIds: new Set(), deviceIds: new Set([devId]), signalRouteIds: new Set(), noSignalPorts: [] } }); return; }
-    this.buildTrace(devRoutes.map(r => r.id));
+    // An unconnected device traces to just itself — traceReach returns the seed with no routes.
+    this.buildTrace({ kind: "device", id: devId });
   }
   clearTrace() { this.setState({ tracedChain: null, selectedDev: null }); }
 
@@ -873,7 +917,7 @@ class Component extends DCLogic {
     });
     this.track("canvasInteractions", this.state.troubleshoot ? "Exit troubleshooting mode" : "Enter troubleshooting mode");
   }
-  retrace() { const tc = this.state.tracedChain; if (tc && tc.routeIds.size) this.buildTrace([...tc.routeIds]); }
+  retrace() { const tc = this.state.tracedChain; if (tc && tc.origin) this.buildTrace(tc.origin); }
 
   visibleDevicesFor() {
     const s = this.state;
@@ -1104,7 +1148,7 @@ class Component extends DCLogic {
         // (not blocked/muted/zero-gain), so the downstream input is detecting audio/video.
         // Flow bubbles are a troubleshooting affordance only — outside troubleshooting mode the
         // canvas stays static so the schematic reads cleanly while designing/routing.
-        const flowing = s.troubleshoot && (tracing ? (inChain && hasSig) : !this.isBlocking(r.fromDevice));
+        const flowing = s.troubleshoot && this.canReportRx(r.toDevice) && (tracing ? (inChain && hasSig) : !this.isBlocking(r.fromDevice));
         const outOfScope = scopeIds && !(scopeIds.has(r.fromDevice) && scopeIds.has(r.toDevice));
         const opacity = tracing ? (inChain ? 1 : 0.07) : (outOfScope ? 0.1 : 1);
         const color = tracing && inChain ? (hasSig ? col : "var(--danger)") : col;

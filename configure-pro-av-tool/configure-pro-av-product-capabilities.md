@@ -37,16 +37,15 @@ _Read this section to understand the product. \~5–7 minutes._
 2. **No visual signal flow:** There is no way to see how audio and video signals flow through a system end-to-end. Installers must mentally reconstruct signal paths from text-based UIs and spreadsheet-style grids.
 <!--   - **Evidence:** Directly observable in the current tool surface — NVX Director exposes routing only as an `AV Routing Matrix` (rows/columns per capability), with no end-to-end path representation (see NVX Director settings inventory, §C). **`[needs data]`** — installer verbatims describing how they currently reconstruct signal paths.-->
 3. **Offline design gap:** Installers cannot pre-design systems before arriving on site and push the design to the system. All configuration requires a live connection to the control processor, eliminating pre-wire planning.
-<!-->   - **Evidence:** Dealer requests (Assumption 4, 🟢 High confidence). Partial precedent exists in NVX Director's `Placeholders` feature, which lets a domain be designed before hardware arrives — confirming demand but scoped to NVX domains only. **`[needs data]`** — frequency and volume of dealer requests; % of jobs where pre-design would apply.-->
-4. **Grid/canvas disconnect:** Routing changes made in one view (canvas vs. grid) do not reliably reflect in the other, eroding trust in the system's accuracy.
-<!--   - **Evidence:** **`[needs data]`** — this is currently an **assumption, not a validated problem.** No canvas exists in the shipping product, so no sync failures have been observed. Reframe as a forward-looking design constraint (see System Behavior rule 2) unless evidence emerges from an analogous existing surface.-->
-5. **Fragmented configuration surfaces:** Key capabilities (e.g., DSP, routing insights, diagnostics) exist across multiple tools and device interfaces today. Configure Pro consolidates these into a single, unified workflow.
+<!--  - **Evidence:** Dealer requests (Assumption 4, 🟢 High confidence). Partial precedent exists in NVX Director's `Placeholders` feature, which lets a domain be designed before hardware arrives — confirming demand but scoped to NVX domains only. **`[needs data]`** — frequency and volume of dealer requests; % of jobs where pre-design would apply.-->
+4. **Fragmented configuration surfaces:** Key capabilities (e.g., DSP, routing insights, diagnostics) exist across multiple tools and device interfaces today. Configure Pro consolidates these into a single, unified workflow.
 <!--   - **Evidence:** Confirmed by direct analysis of NVX Director — ~200 customer-facing settings across 11 routes, spanning system administration, PKI, domain/multicast planning, control-system integration, routing, and per-endpoint media configuration (see NVX Director settings inventory). Device-specific WebUIs add further surfaces. **`[needs data]`** — equivalent inventory for device WebUIs and legacy configuration software.-->
 
 #### Evidence Gaps — How We Close Them
 
 <!--Every **`[needs data]`** above is unsourced as of 2026-07-29. This table is the plan to close them; it should be emptied before Phase A is committed.-->
 
+<!-- 
 | # | Gap | How we'll close it | Owner | Target |
 | --- | --- | --- | --- | --- |
 | 1 | Tools opened per commissioning job; time lost per switch | Contextual inquiry during live commissioning (3–5 sessions) | *TBD* | *TBD* |
@@ -55,12 +54,13 @@ _Read this section to understand the product. \~5–7 minutes._
 | 4 | Support ticket categorisation — NVX Director questions, "no audio" troubleshooting, routing errors | Query support system by category over trailing 2 quarters | *TBD* | *TBD* |
 | 5 | System-size distribution across deployed processors | Processor telemetry analysis (already listed under Discovery & Validation) | *TBD* | *TBD* |
 | 6 | Settings-surface inventory for device WebUIs and legacy config software | Repeat the NVX Director static-analysis method on the next-largest surface | *TBD* | *TBD* |
+-->
 
 ### User Journey Context
 
 These problems surface at critical points in the installer workflow:
 
-- **Commissioning / onsite:** Switching between tools during time-pressured onsite work leads to mistakes in routing and device configuration.
+- **Commissioning / onsite:** Switching between tools during onsite work leads to mistakes in routing and device configuration.
 - **Troubleshooting / post-install:** Without visual signal tracing, diagnosing "no audio" or "wrong source" problems requires trial-and-error across multiple screens.
 - **Pre-wire / design phase:** No offline design capability means installers arrive on site without a plan, increasing commissioning time.
 
@@ -140,7 +140,7 @@ _This section tracks what we've validated, what we're assuming, and what we need
 | 3 | Signal-path tracing is the primary troubleshooting mental model for installers | 🟡 Medium | Inferred from support patterns |
 | 5 | 25–50 device systems represent the performance ceiling we need to target for Phase A | 🟡 Medium | Based on "typical" system sizes — needs data validation |
 
-### What We've Validated
+<!-- ### What We've Validated
 
 _Update this section as discovery work is completed._
 
@@ -148,6 +148,7 @@ _Update this section as discovery work is completed._
 - [ ] Competitive analysis of visual configuration tools in adjacent domains
 - [ ] Quantified time-on-task for current multi-tool workflows
 - [ ] Dealer survey on offline design demand and frequency
+-->
 
 ### What We Need to Prove Before Phase A Commitment
 
@@ -251,7 +252,7 @@ This initiative is optimized against **two** metrics, deliberately paired. The f
 | **P1 (adoption)** | % of routing interactions initiated on the canvas (vs. routing grid vs. external tools) | A-27, A-28 | 0% (no canvas exists today) | **≥70%** | 30 and 90 days post Phase-A launch |
 | **P2 (outcome)** | External tool launches per commissioning job (device WebUI, NVX Director, legacy config software) | A-29 | **`[needs data]`** — must be established pre-launch | **≥50% reduction vs. baseline** | 90 days post Phase-A launch |
 
-> **P2 is blocked on a baseline.** Without a pre-launch measurement of external tool launches per job, the target is unfalsifiable. Establishing this baseline is a Phase-A entry condition — see Evidence Gap #1 and #4.
+> **P2 is blocked on a baseline.** Without a pre-launch measurement of external tool launches per job, the target is hard to verify. Establishing this baseline is a Phase-A entry condition — see Evidence Gap #1 and #4.
 
 ### Secondary Metrics
 
@@ -268,9 +269,9 @@ Monitored to explain *why* the primary metrics moved. Not optimization targets.
 | Smooth transition from offline design → live deployment | First-time deployment success rate | Baseline → measure | B |
 | Users can complete full system design offline | Offline design completion rate | Baseline → measure | D |
 
-**Baseline ownership:** every "Baseline → measure" row above requires a named owner and a date by which the baseline exists. Rows without one are not measurable and should not be cited as success criteria. **`[needs data]`** — assign owners.
+**Baseline ownership:** every "Baseline → measure" row above requires a baseline to exist. Rows without a baseline are not measurable and should not be cited as success criteria.
 
-### Guardrail Metrics (must not regress)
+### Guardrail Metrics (not a regression)
 
 What we are *not* willing to trade away to hit the primary metrics.
 
