@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Crestron Setup App — Devices — Add Device — Drivers (reconstructed from CSS export)</title>
+<style>
+  /* ============================================================
+     Reconstructed ENTIRELY from the Figma CSS export.
+     No Figma API calls were made.
+
+     Everything renders in its real style. Where the export could not
+     carry the data, the placeholder uses the CORRECT font, size, weight
+     and color — only the words say [missing]. Icons render as a light
+     dashed box at the exact spec'd dimensions, labeled with the Figma
+     layer name.
+     ============================================================ */
+
+  :root {
+    --bg-card:        #F2F2F7;
+    --border-card:    #D1D1D6;
+    --bg-list:        #E7E7EE;
+    --row-white:      #FFFFFF;
+    --row-selected:   #636366;
+    --ink:            #000000;
+    --ink-icon:       #1C1C1E;
+    --ink-muted:      #7B7B7E;
+    --ink-room-sub:   #48484A;
+    --border-input:   #C7C7CC;
+    --annotation:     #03C03C;
+    --teal-grad:      linear-gradient(93.1deg, #02AADB 0.36%, #007CA0 90.7%);
+    --shadow-2xl:     0px 12px 48px -12px rgba(0,0,0,0.18);
+    --shadow-xl:      0px 8px 8px -4px rgba(0,0,0,0.01), 0px 20px 24px -4px rgba(0,0,0,0.03);
+    --shadow-xs:      0px 1px 2px rgba(0,0,0,0.05);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 40px;
+    /* Cerebri Sans Pro per the export; falling back since the font file isn't here. */
+    font-family: 'Cerebri Sans Pro', -apple-system, 'Segoe UI', sans-serif;
+    background: #8E8E93;
+    display: flex;
+    justify-content: center;
+  }
+
+  /* ---------- outer card ---------- */
+  /* Export gave: width 1520 / height 889 / left 150 / top 28095.
+     left+top are Figma canvas coordinates, NOT layout — dropped. */
+  .card {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    padding: 30px 40px 60px;
+    gap: 40px;
+    isolation: isolate;
+    position: relative;
+    width: 1520px;
+    height: 889px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    box-shadow: var(--shadow-2xl);
+    border-radius: 24px;
+  }
+
+  .col-left  { display:flex; flex-direction:column; align-items:flex-start; gap:10px; width:700px; height:799px; position:relative; }
+  .col-right { display:flex; flex-direction:column; align-items:flex-start; gap:10px; width:700px; height:795px; }
+
+  /* ---------- headers ---------- */
+  .header { display:flex; flex-direction:row; align-items:center; gap:4px; width:700px; height:110px; }
+  .back-slot { display:flex; flex-direction:column; align-items:center; padding:20px 0; gap:10px; width:49.47px; height:110px; position:relative; flex:none; }
+  .header-text { display:flex; flex-direction:column; align-items:flex-start; gap:4px; height:110px; }
+  .heading-main { display:flex; flex-direction:column; justify-content:flex-end; align-items:flex-start; padding:0 0 16px; width:448px; height:54px; }
+  /* Display sm/Bold */
+  .title-lg { height:38px; font-size:30px; line-height:38px; font-weight:700; color:var(--ink); display:flex; align-items:center; }
+  .caption { display:flex; flex-direction:column; justify-content:center; padding:4px 0 12px; height:42px; }
+  /* Text xl/Regular */
+  .caption-txt { height:26px; font-size:20px; line-height:26px; font-weight:400; color:var(--ink-muted); display:flex; align-items:center; }
+
+  /* ---------- search ---------- */
+  .search-row { display:flex; flex-direction:row; align-items:center; gap:8px; width:700px; }
+  .search-box {
+    display:flex; flex-direction:row; align-items:center; padding:13px 23px; gap:14px;
+    width:582px; height:54px; background:#fff;
+    border:2px solid var(--border-input); box-shadow:var(--shadow-xl); border-radius:8px;
+  }
+  .search-txt { font-size:20px; line-height:26px; font-weight:400; color:var(--ink-icon); }
+  .btn-simple {
+    display:flex; flex-direction:row; align-items:center; padding:6px 12px; gap:6px;
+    height:48px; background:#fff; border-radius:8px; border:none; cursor:pointer;
+    font-family:inherit;
+  }
+  .btn-simple span {
+    font-size:16px; line-height:20px; font-weight:400;
+    letter-spacing:-0.02em; text-transform:capitalize; color:var(--ink-icon);
+  }
+
+  /* ---------- list containers ---------- */
+  .list {
+    display:flex; flex-direction:column; align-items:center; padding:5px; gap:5px;
+    width:700px; background:var(--bg-list); border:1px solid var(--border-card); border-radius:16px;
+  }
+  .list-devices  { overflow-y:scroll; isolation:isolate; } /* height set per screen */
+  .list-rooms    { height:675px; }
+
+  /* ---------- device row ---------- */
+  .row-device {
+    display:flex; flex-direction:row; align-items:center; padding:0 10px; gap:10px;
+    width:690px; min-height:54px; flex:none; align-self:stretch;
+    background:var(--row-white); box-shadow:var(--shadow-xs); border-radius:16px;
+    position:relative;
+  }
+  .row-icon { display:flex; justify-content:center; align-items:center; width:40px; height:40px; flex:none; }
+  .row-text { display:flex; flex-direction:column; justify-content:center; align-items:flex-start; padding:15px 10px; gap:2px; flex:1; }
+  .row-title-line { display:flex; flex-direction:row; align-items:center; gap:8px; height:24px; }
+  .row-title { font-size:18px; line-height:24px; font-weight:700; color:var(--ink); }
+  .row-sub   { font-size:16px; line-height:18px; font-weight:400; letter-spacing:-0.01em; color:var(--ink-muted); }
+  /* Variant props that were display:none in this screen's export.
+     Add class "show" on .row-device to reveal them. */
+  .opt { display:none; }
+  .row-device.show .opt { display:block; }
+  .row-device.show .opt.inline-opt { display:flex; }
+  .row-sub-teal {
+    font-size:16px; line-height:18px; font-weight:400; letter-spacing:-0.01em;
+    background:var(--teal-grad); -webkit-background-clip:text; background-clip:text;
+    -webkit-text-fill-color:transparent;
+  }
+  .row-actions { display:flex; justify-content:flex-end; align-items:center; gap:5px; width:32px; height:32px; flex:none; }
+
+  /* ---------- tall "driver detail" row (98px) — 2N screen export ---------- */
+  .row-device.tall { height:98px; }
+  .row-detail {
+    display:flex; flex-direction:row; flex-wrap:wrap;
+    align-items:flex-end; align-content:flex-end;
+    padding:15px 4px; gap:6px 4px; width:582px; height:98px; flex:1; align-self:stretch;
+  }
+  .detail-title-line { display:flex; flex-direction:row; align-items:center; gap:10px; width:483px; height:24px; }
+  .detail-col {
+    display:flex; flex-direction:column; justify-content:center; align-items:flex-start;
+    padding:0; gap:2px; width:225px; height:38px; flex:none;
+  }
+  .detail-col.right { align-items:flex-end; text-align:right; }
+  .detail-line { font-size:16px; line-height:18px; font-weight:400; letter-spacing:-0.01em; color:var(--ink-muted); min-height:18px; }
+  .row-buttons { display:flex; justify-content:flex-end; align-items:center; gap:5px; width:28px; height:28px; flex:none; }
+
+  /* green Figma sticky note from the export — annotation, not UI */
+  .proto-note {
+    position:absolute; display:flex; justify-content:center; align-items:center;
+    padding:12px 8px; width:196px; height:174px; left:504px; top:428px;
+    background:var(--annotation); border-radius:8px; z-index:6;
+    box-shadow:0px 4px 6px -2px rgba(0,0,0,0.03), 0px 12px 16px -4px rgba(0,0,0,0.03);
+    font-size:14px; line-height:20px; font-weight:700; text-align:center;
+    text-transform:capitalize; color:#FFFFFF;
+  }
+  body.hide-annotations .proto-note { display:none; }
+
+  /* ---------- room row ---------- */
+  .row-room {
+    display:flex; flex-direction:row; align-items:center; padding:0 0 0 10px;
+    width:690px; height:54px; flex:none; align-self:stretch;
+    background:var(--row-white); box-shadow:var(--shadow-xs); border-radius:16px;
+  }
+  .row-room.selected { background:var(--row-selected); }
+  .room-text { display:flex; flex-direction:row; align-items:center; padding:10px; gap:10px; flex:1; height:44px; }
+  .room-title { font-size:18px; line-height:24px; font-weight:700; color:var(--ink); }
+  /* item count sits right-aligned, just left of the chevron */
+  .room-count { font-size:16px; line-height:18px; font-weight:400; color:var(--ink-room-sub); text-align:right; min-width:24px; flex:none; }
+  .row-room.selected .room-title,
+  .row-room.selected .room-count { color:#FFFFFF; }
+  .room-chevron { display:flex; flex-direction:column; justify-content:center; align-items:flex-end; padding:10px 5px; width:34px; height:44px; }
+
+  /* rows / controls that navigate — no hover or cursor change;
+     the real app gives no affordance on hover */
+  .clickable { cursor:default; }
+  .back-slot { background:none; border:none; padding:20px 0; font:inherit; cursor:default; }
+  .back-slot[disabled] { opacity:0.35; }
+  .x-close { display:flex; align-items:center; justify-content:center; }
+
+  /* ---------- modal ---------- */
+  .overlay {
+    position:absolute; inset:0; z-index:10; border-radius:24px;
+    background:rgba(0,0,0,0.25);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .overlay[hidden] { display:none; }
+  /* Export: width 1240 (min 1065 / max 1240), height 372 with the inner
+     content scrolling. Height is auto here so Continue stays reachable. */
+  .modal {
+    box-sizing:border-box;
+    display:flex; flex-direction:row; align-items:center;
+    padding:20px 0; isolation:isolate; position:relative;
+    width:1240px; min-width:1065px; max-width:1240px; max-height:85vh;
+    background:var(--bg-card); border:1px solid var(--border-card);
+    box-shadow:var(--shadow-2xl); border-radius:24px;
+  }
+  .modal-content {
+    display:flex; flex-direction:column; align-items:flex-start;
+    padding:0 239px; width:1240px; overflow-y:auto; isolation:isolate;
+  }
+  .modal-header { display:flex; flex-direction:column; justify-content:flex-end; align-items:flex-end; width:762px; align-self:stretch; }
+  /* caption here is Text xl/Medium (500), not Regular like the screen headers */
+  .modal-caption { height:26px; font-size:20px; line-height:26px; font-weight:500; color:var(--ink-muted); display:flex; align-items:center; }
+
+  .section { display:flex; flex-direction:column; align-items:flex-start; width:762px; align-self:stretch; }
+  .section-heading {
+    display:flex; flex-direction:row; align-items:flex-end; padding:0 16px 12px; height:60px;
+    font-size:18px; line-height:24px; font-weight:500; letter-spacing:-0.02em;
+    text-transform:uppercase; color:var(--ink-muted);
+  }
+  .settings-table {
+    display:flex; flex-direction:column; align-items:flex-start; width:762px; align-self:stretch;
+    background:#FFFFFF; box-shadow:var(--shadow-xs); border-radius:16px;
+  }
+  /* text-input row */
+  .table-row-field { display:flex; flex-direction:row; align-items:center; padding:10px 16px; gap:4px; width:762px; align-self:stretch; }
+  .form-field { display:flex; flex-direction:column; align-items:flex-start; gap:8px; flex:1; }
+  .field-label {
+    font-size:14px; line-height:16px; font-weight:500; text-transform:uppercase;
+    color:var(--ink-icon); opacity:0.5; align-self:stretch;
+  }
+  .field-input {
+    font-size:18px; line-height:20px; font-weight:400; color:#000000;
+    border:none; outline:none; background:transparent; font-family:inherit;
+    height:24px; align-self:stretch; padding:0;
+  }
+  .field-rule { height:1px; background:var(--ink-icon); opacity:0.5; align-self:stretch; }
+  /* label/value row */
+  .table-row-info { display:flex; flex-direction:row; align-items:center; padding:18px 16px; gap:4px; width:762px; height:48px; align-self:stretch; }
+  .info-label { font-size:18px; line-height:20px; font-weight:400; text-transform:capitalize; color:var(--ink-icon); }
+  .info-value { font-size:18px; line-height:20px; font-weight:400; text-transform:capitalize; color:var(--ink-muted); flex:1; text-align:right; }
+  /* Dividers: 15px transparent gutter, then the rule at 16% */
+  .divider { display:flex; flex-direction:row; align-items:flex-start; width:762px; align-self:stretch; }
+  .divider::before { content:''; width:15px; }
+  .divider::after  { content:''; flex:1; border-top:1px solid var(--ink-icon); opacity:0.16; }
+
+  .modal-actions { display:flex; flex-direction:column; align-items:flex-end; padding:40px 0 20px; gap:10px; width:762px; position:relative; }
+  /* Export had a full-width teal-gradient bar; today's app ships this dark
+     pill (per screenshot), so that's what renders. */
+  .btn-continue {
+    display:flex; justify-content:center; align-items:center; padding:10px 32px; gap:6px;
+    height:40px; background:#3A3A3C; border:none; border-radius:20px; cursor:default;
+    font-family:inherit; font-size:18px; line-height:21px; font-weight:500;
+    letter-spacing:-0.02em; color:#FFFFFF;
+  }
+  .modal .x-close { right:16.53px; top:22px; }
+  .btn-continue.clickable { cursor:pointer; }
+  .btn-continue[disabled] { opacity:0.4; cursor:default; }
+  .btn-back {
+    display:flex; justify-content:center; align-items:center; padding:10px 32px;
+    height:40px; background:transparent; border:1px solid #3A3A3C; border-radius:20px;
+    font-family:inherit; font-size:18px; line-height:21px; font-weight:500;
+    letter-spacing:-0.02em; color:#3A3A3C; cursor:pointer;
+  }
+  .action-row { display:flex; flex-direction:row; justify-content:flex-end; align-items:center; gap:12px; }
+  .field-error { font-size:14px; line-height:16px; color:#D92D20; min-height:16px; align-self:stretch; }
+  .field-rule.err { background:#D92D20; opacity:1; }
+  /* two fields side by side in one table row (company ID / site ID) */
+  .table-row-field.pair { gap:24px; }
+  .status-line {
+    display:flex; align-items:center; gap:10px; padding:16px;
+    font-size:18px; line-height:24px; color:var(--ink-muted);
+  }
+  .spinner {
+    width:18px; height:18px; border:2px solid rgba(0,0,0,0.15);
+    border-top-color:#007CA0; border-radius:50%; animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .info-value.wrap-val { text-transform:none; white-space:pre-line; }
+
+  /* ---------- close ---------- */
+  .x-close { position:absolute; width:49.47px; height:48px; right:20px; top:20px; z-index:2; }
+
+  /* ================= PLACEHOLDERS =================
+     Text: inherits the real font/size/weight/color from its parent.
+     Only the words signal the gap. No background, no border. */
+  .txt-missing { font: inherit; color: inherit; opacity: 0.45; }
+
+  /* Icon: neutral dashed box at the exact spec'd size, tinted to the
+     stroke color the export specified for that icon. */
+  .icon-missing {
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    border:1px dashed rgba(28,28,30,0.35); border-radius:4px;
+    color:rgba(28,28,30,0.45);
+    font-size:6px; line-height:1.05; font-weight:400;
+    overflow:hidden; word-break:break-word; padding:1px; flex:none;
+  }
+  .icon-missing.on-dark { border-color:rgba(255,255,255,0.5); color:rgba(255,255,255,0.7); }
+
+  /* Green dashed circles from the export (Rectangle 37) — read as
+     Figma annotation markers, not UI. Toggle in the legend. */
+  .annotation { position:absolute; width:40px; height:40px; border:2px dashed var(--annotation); border-radius:20px; pointer-events:none; }
+  body.hide-annotations .annotation { display:none; }
+
+  .legend {
+    width:1520px; margin:0 auto 16px; padding:12px 16px; background:#fff;
+    border-radius:12px; font-size:13px; line-height:1.6; color:#1C1C1E;
+  }
+  .legend code { background:#F2F2F7; padding:1px 4px; border-radius:3px; }
+  .wrap { display:flex; flex-direction:column; align-items:center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="card">
+
+    <!-- ============ LEFT COLUMN — swapped per screen ============ -->
+    <div class="col-left" id="colLeft"></div>
+
+    <!-- ============ RIGHT COLUMN — swapped per screen ============ -->
+    <div class="col-right" id="colRight"></div>
+
+    <!-- modal host; contents pending the Figma export -->
+    <div class="overlay" id="overlay" hidden></div>
+
+    <div class="x-close clickable" title="x-close">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M18 6 6 18M6 6l12 12" stroke="#1C1C1E" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ---------- real icons (vectors we can reproduce) ---------- */
+  const chevronRight = (color = '#7B7B7E', size = 32) =>
+    `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+       <path d="m9 18 6-6-6-6" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+     </svg>`;
+  const chevronLeft = (color = '#000000', size = 32) =>
+    `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+       <path d="m15 18-6-6 6-6" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+     </svg>`;
+  const plusCircle = (color = '#7B7B7E') =>
+    `<svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+       <path d="M13.9987 9.33398V18.6673M9.33203 14.0007H18.6654M25.6654 14.0007C25.6654 20.444 20.442 25.6673 13.9987 25.6673C7.55538 25.6673 2.33203 20.444 2.33203 14.0007C2.33203 7.55733 7.55538 2.33398 13.9987 2.33398C20.442 2.33398 25.6654 7.55733 25.6654 14.0007Z" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+     </svg>`;
+  /* everything else stays a labeled placeholder box */
+  const ph = (name, w, h, dark) =>
+    `<div class="icon-missing${dark ? ' on-dark' : ''}" style="width:${w}px;height:${h}px;">${name}</div>`;
+
+  /* Rows rebuilt from the export. `w` is the Figma-reported width of the
+     title text box, kept as a reference for how long the real string is. */
+  const DEVICES = [
+    { icon: 'av-receiver',              w: 167, label:'AV Receiver Helper' },
+    { icon: 'ipod-dock-01',             w: 183, label:'AV Switcher' },
+    { icon: 'tool-02',                  w: 69,  label:'Blue-ray Player' },
+    { icon: 'tool-02',                  w: 69,  label:'Cable Box' },
+    { icon: 'tool-02',                  w: 69,  label:'Camera' },
+    { icon: 'tool-02',                  w: 69,  label:'Custom Device' },
+    { icon: 'tool-02',                  w: 69,  label:'Date-Time' },
+    { icon: 'tool-02',                  w: 69,  label:'Display' },
+    { icon: 'tool-02',                  w: 69,  label:'Door Access' },
+    { icon: 'tool-02',                  w: 69,  label:'Doorbell', annotate: true, goTo:'doorbell' },
+    { icon: 'tool-02',                  w: 69,  label:'Energy Automation' },
+  ];
+
+  /* Screen 2 — from the second CSS export: same shell, no row icons
+     (icon frame was display:none), list 611px instead of 615px. */
+  const MANUFACTURERS = [
+    { w: 57,  label:'2N', annotate: true, goTo:'twon' },
+    { w: 92,  label:'AVPro Edge' },
+    { w: 70,  label:'Crestron'   },
+    { w: 64,  label:'Doorbird'   },
+  ];
+
+  /* Screen 3 — from the third CSS export: 98px rows, two detail columns,
+     badge icons after the title, plus-circle instead of a chevron.
+     Badge colors are the export's: Crestron #0070FF, puzzle #AE4EDE,
+     dollar #74C365. */
+  const BADGES = {
+    crestron: { name:'Brands / Icon / Crestron', color:'#0070FF' },
+    puzzle:   { name:'puzzle-piece-01',          color:'#AE4EDE' },
+    dollar:   { name:'currency-dollar-circle',   color:'#74C365' },
+  };
+
+  const TWON_DRIVERS = [
+    { label:'2N Doorstation',      badges:['puzzle'], col1:['Cloud','Crestron Driver'] },
+  ].map(d => ({ ...d, icon:'av-receiver', col2:['Make: 2N', 'Category:Doorstaton'] }));
+
+  /* ---------- screen definitions ---------- */
+  const SCREENS = {
+    drivers: {
+      title:   'Drivers',
+      caption: 'Select a driver type below',
+      captionW: 246,
+      search:  'Search for a driver',
+      listH:   615,
+      rows:    DEVICES,
+      icons:   true,
+    },
+    doorbell: {
+      title:   'Doorbell',
+      caption: 'Select a manufacturer below.',
+      captionW: 199,
+      search:  'Search for a driver',
+      listH:   611,
+      rows:    MANUFACTURERS,
+      icons:   false,
+    },
+    twon: {
+      title:   '2N',
+      caption: 'Select a driver below',
+      captionW: 646.53,
+      search:  'Search for a driver',
+      listH:   611,
+      rows:    TWON_DRIVERS,
+      icons:   true,
+      style:   'detail',   /* 98px two-column rows */
+      note:    'DRIVER TYPE All Driver Types Icon must have a hover message. '
+             + 'Driver Types = Crestron Driver, Extension Driver, License Required, '
+             + 'Extension License Required',
+      /* Atrium is the annotated click-through on this screen */
+      right:   { annotate:'Atrium', goTo:'atrium' },
+    },
+    /* Left side is identical to the 2N screen; only the room panel changes. */
+    atrium: {
+      extends: 'twon',
+      right:   { title:'Atrium', caption:'Select a device to view/edit its configuration.',
+                 captionW:417, back:true, empty:true },
+    },
+  };
+
+  /* resolve `extends` so a screen can reuse another's left column */
+  const screenFor = key => {
+    const s = SCREENS[key];
+    return s.extends ? { ...SCREENS[s.extends], ...s } : s;
+  };
+
+  /* ---------- right column (rooms) ---------- */
+  const ROOMS = [
+    { name:'Atrium',      items:'0' },
+    { name:'Backyard',    items:'2' },
+    { name:'Basement',    items:'4' },
+    { name:'Bathroom',    items:'1' },
+    { name:'Bedroom',     items:'2' },
+    { name:'Living Room', items:'5' },
+  ];
+
+  function rightHTML(s) {
+    const r = s.right || {};
+    const title    = r.title    || 'Rooms Available';
+    const caption  = r.caption  || 'Select a room to add devices to or view devices in the room';
+    const captionW = r.captionW || 617;
+
+    return `
+      <div class="header">
+        ${r.back ? `<button class="back-slot clickable" id="backBtnRight">${chevronLeft('#000000', 40)}</button>` : ''}
+        <div class="header-text" style="width:${r.back ? 448 : 617}px;">
+          <div class="heading-main"><div class="title-lg">${title}</div></div>
+          <div class="caption" style="width:${captionW}px;">
+            <div class="caption-txt">${caption}</div>
+          </div>
+        </div>
+      </div>
+      <div class="list list-rooms">
+        ${r.empty ? '' : ROOMS.map(room => {
+          const sel  = r.selected === room.name;
+          const link = r.goTo && r.annotate === room.name;
+          return `
+          <div class="row-room ${sel ? 'selected' : ''} ${link ? 'clickable' : ''}"
+               ${link ? `data-goto="${r.goTo}"` : ''}>
+            ${ph('door-open-01', 32, 32, sel)}
+            <div class="room-text"><span class="room-title">${room.name}</span></div>
+            <div class="room-count">${room.items}</div>
+            <div class="room-chevron">${chevronRight(sel ? '#FFFFFF' : '#7B7B7E', 24)}</div>
+            ${r.annotate === room.name ? '<div class="annotation" style="left:6px;top:7px;"></div>' : ''}
+          </div>`;
+        }).join('')}
+      </div>`;
+  }
+
+  /* ---------- row renderers ---------- */
+  const simpleRow = (d, s) => `
+    <div class="row-device ${d.goTo ? 'clickable' : ''}" ${d.goTo ? `data-goto="${d.goTo}"` : ''}>
+      ${s.icons ? `<div class="row-icon">${ph(d.icon, 40, 40)}</div>` : ''}
+      <div class="row-text">
+        <div class="row-title-line">
+          <span class="row-title">${d.label}</span>
+          <span class="opt inline-opt icon-missing" style="width:16px;height:16px;">link-external-01</span>
+        </div>
+        <div class="opt row-sub">S/N: ABCDEFGHIJ1234567890</div>
+        <div class="opt row-sub">IP Address: 192.168.1.1</div>
+        <div class="opt row-sub-teal">2 Devices Acquired</div>
+      </div>
+      <div class="row-actions">${chevronRight('#7B7B7E', 32)}</div>
+      ${d.annotate ? '<div class="annotation" style="right:10px;top:7px;"></div>' : ''}
+    </div>`;
+
+  const detailRow = d => `
+    <div class="row-device tall ${d.goTo ? 'clickable' : ''}" ${d.goTo ? `data-goto="${d.goTo}"` : ''}>
+      <div class="row-icon">${ph(d.icon, 40, 40)}</div>
+      <div class="row-detail">
+        <div class="detail-title-line">
+          <span class="row-title">${d.label}</span>
+          ${ph('info-circle', 16, 16)}
+          ${d.badges.map(b => `<div class="icon-missing" style="width:20px;height:20px;border-color:${BADGES[b].color};color:${BADGES[b].color};">${BADGES[b].name}</div>`).join('')}
+        </div>
+        <div class="detail-col">${d.col1.map(t => `<div class="detail-line">${t || '&nbsp;'}</div>`).join('')}</div>
+        <div class="detail-col right">${d.col2.map(t => `<div class="detail-line">${t || '&nbsp;'}</div>`).join('')}</div>
+      </div>
+      <div class="row-buttons" data-add="${d.label}">${plusCircle('#7B7B7E')}</div>
+      ${d.annotate ? '<div class="annotation" style="right:10px;top:7px;"></div>' : ''}
+    </div>`;
+
+  /* ---------- navigation ---------- */
+  const navStack = ['drivers'];
+
+  function renderLeft() {
+    const key = navStack[navStack.length - 1];
+    const s = screenFor(key);
+    const atRoot = navStack.length === 1;
+
+    document.getElementById('colLeft').innerHTML = `
+      <div class="header">
+        <button class="back-slot ${atRoot ? '' : 'clickable'}" id="backBtn" ${atRoot ? 'disabled' : ''}>
+          ${chevronLeft('#000000', 40)}
+          ${atRoot ? '<div class="annotation" style="left:5px;top:24px;"></div>' : ''}
+        </button>
+        <div class="header-text" style="width:448px;">
+          <div class="heading-main"><div class="title-lg">${s.title}</div></div>
+          <div class="caption" style="width:${s.captionW}px;">
+            <div class="caption-txt">${s.caption}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="search-row">
+        <div class="search-box">
+          ${ph('search-lg', 21, 21)}
+          <div class="search-txt" style="color:var(--ink-muted)">${s.search}</div>
+        </div>
+        <!-- Export had this absolute at left:593 top:3; inline here, same result. -->
+        <button class="btn-simple clickable">
+          ${ph('refresh-cw-01', 24, 24)}<span>Rescan</span>
+        </button>
+      </div>
+
+      <div class="list list-devices" style="height:${s.listH}px;">
+        ${s.rows.map(d => s.style === 'detail' ? detailRow(d) : simpleRow(d, s)).join('')}
+      </div>`;
+
+    document.getElementById('colRight').innerHTML = rightHTML(s);
+
+    const back = () => { navStack.pop(); renderLeft(); };
+    document.querySelectorAll('[data-goto]').forEach(el =>
+      el.onclick = () => { navStack.push(el.dataset.goto); renderLeft(); });
+    if (!atRoot) document.getElementById('backBtn').onclick = back;
+    const rb = document.getElementById('backBtnRight');
+    if (rb) rb.onclick = back;
+
+    /* the plus-circle opens the "add driver" modal */
+    document.querySelectorAll('[data-add]').forEach(el =>
+      el.onclick = () => openModal(el.dataset.add));
+  }
+
+  /* ---------- "Add device" modal ---------- */
+  const MODAL = {
+    caption: 'Enter the name for your device.',
+    info: [
+      ['Manufacturer', '2N'],
+      ['Developer',    'Crestron'],
+    ],
+  };
+
+  /* ============================================================
+     My2N site lookup — THE API SEAM.
+
+     Replace the body of fetchSiteInfo() with the real My2N call when
+     the endpoint is available. It must keep this contract:
+       in : { username, password, companyId, siteId }
+       out: Promise resolving to the site object below,
+            or rejecting with an Error whose .message is shown in the UI.
+     Everything downstream renders off SITE_FIELDS, so adding a field
+     is a one-line change there.
+     ============================================================ */
+  const MOCK_SITES = {
+    '482913': {
+      siteName:     'Harborview Residences',
+      siteId:       '482913',
+      companyName:  'Meridian Property Group',
+      companyId:    '710256',
+      address:      '1420 Wharf Street\nBuilding C\nBoston, MA 02210\nUnited States',
+      timezone:     'America/New_York (UTC-05:00)',
+      devices:      '3 intercoms, 1 answering unit',
+      subscription: 'My2N Gold — renews 2027-03-14',
+      siteAdmin:    'j.alvarez@meridianpg.com',
+    },
+  };
+  /* Any other 6-digit site ID returns this, so the click-through never dead-ends. */
+  const MOCK_SITE_FALLBACK = {
+    siteName:     'Elmwood Court',
+    companyName:  'Northline Facilities Ltd.',
+    address:      '88 Elmwood Court\nSuite 210\nAustin, TX 78701\nUnited States',
+    timezone:     'America/Chicago (UTC-06:00)',
+    devices:      '2 intercoms, 2 answering units',
+    subscription: 'My2N Standard — renews 2026-11-02',
+    siteAdmin:    'admin@northlinefacilities.com',
+  };
+
+  /* Field order + labels for the "Site Details" table. */
+  const SITE_FIELDS = [
+    ['Site Name',        'siteName'],
+    ['Site ID',          'siteId'],
+    ['Company',          'companyName'],
+    ['Company ID',       'companyId'],
+    ['Site Address',     'address'],
+    ['Time Zone',        'timezone'],
+    ['Devices On Site',  'devices'],
+    ['Subscription',     'subscription'],
+    ['Site Admin',       'siteAdmin'],
+  ];
+
+  function fetchSiteInfo({ username, password, companyId, siteId }) {
+    // ---- MOCK. Swap for the real My2N request, e.g.:
+    // return fetch(`${MY2N_BASE}/companies/${companyId}/sites/${siteId}`, {
+    //   headers: { Authorization: 'Basic ' + btoa(`${username}:${password}`) }
+    // }).then(r => r.ok ? r.json() : Promise.reject(new Error(`Lookup failed (${r.status})`)));
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        if (password === 'fail') return reject(new Error('Sign-in failed. Check the My2N admin username and password.'));
+        const hit = MOCK_SITES[siteId];
+        resolve(hit || { ...MOCK_SITE_FALLBACK, siteId, companyId });
+      }, 900);
+    });
+  }
+
+  /* ---------- "Add device" modal — 3 steps ---------- */
+  let modalState = null;   // { driver, creds, site, error }
+
+  function openModal(driver) {
+    modalState = { driver, creds: { username:'', password:'', companyId:'', siteId:'' }, site:null, error:null };
+    renderModal('name');
+  }
+
+  const closeModal = () => { document.getElementById('overlay').hidden = true; modalState = null; };
+
+  function modalShell(title, caption, body, actions) {
+    const ov = document.getElementById('overlay');
+    ov.innerHTML = `
+      <div class="modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <div class="heading-main" style="width:762px;">
+              <div class="title-lg" style="width:762px;">${title}</div>
+            </div>
+            <div class="caption" style="width:762px;">
+              <div class="modal-caption">${caption}</div>
+            </div>
+          </div>
+          ${body}
+          <div class="modal-actions"><div class="action-row">${actions}</div></div>
+        </div>
+        <div class="x-close clickable" id="modalClose" title="x-close">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>`;
+    ov.hidden = false;
+    ov.onclick = e => { if (e.target === ov) closeModal(); };
+    document.getElementById('modalClose').onclick = closeModal;
+  }
+
+  const field = (label, key, type = 'text', extra = '') => `
+    <div class="form-field">
+      <div class="field-label">${label}</div>
+      <input class="field-input" data-key="${key}" type="${type}" ${extra}>
+      <div class="field-rule" data-rule="${key}"></div>
+      <div class="field-error" data-err="${key}"></div>
+    </div>`;
+
+  function renderModal(step) {
+    if (step === 'name')  return renderStepName();
+    if (step === 'creds') return renderStepCreds();
+    if (step === 'site')  return renderStepSite();
+  }
+
+  /* --- Step 1: name the device (the existing screen) --- */
+  function renderStepName() {
+    const body = `
+      <div class="section">
+        <div class="section-heading">Device Driver Details</div>
+        <div class="settings-table">
+          <div class="table-row-field">
+            <div class="form-field">
+              <div class="field-label">Name</div>
+              <input class="field-input" id="deviceName" autofocus value="${modalState.deviceName || ''}">
+              <div class="field-rule"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-heading">Driver Information</div>
+        <div class="settings-table">
+          ${MODAL.info.map(([label, value], i) => `
+            ${i ? '<div class="divider"></div>' : ''}
+            <div class="table-row-info">
+              <div class="info-label">${label}</div>
+              <div class="info-value">${value}</div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+    modalShell(`Add ${modalState.driver} to Your System`, MODAL.caption, body,
+      `<button class="btn-continue clickable" id="btnContinue">Continue</button>`);
+    document.getElementById('btnContinue').onclick = () => {
+      modalState.deviceName = document.getElementById('deviceName').value;
+      renderModal('creds');
+    };
+  }
+
+  /* --- Step 2: My2N credentials + company/site IDs --- */
+  function renderStepCreds() {
+    const c = modalState.creds;
+    const body = `
+      <div class="section">
+        <div class="section-heading">My2N Account</div>
+        <div class="settings-table">
+          <div class="table-row-field">${field('Site Admin or Company Admin Username', 'username', 'text', 'autofocus autocomplete="username"')}</div>
+          <div class="divider"></div>
+          <div class="table-row-field">${field('Password', 'password', 'password', 'autocomplete="current-password"')}</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-heading">Site Identification</div>
+        <div class="settings-table">
+          <div class="table-row-field pair">
+            ${field('Company ID', 'companyId', 'text', 'inputmode="numeric" maxlength="10"')}
+            ${field('Site ID',    'siteId',    'text', 'inputmode="numeric" maxlength="10"')}
+          </div>
+        </div>
+      </div>
+      ${modalState.error ? `<div class="section"><div class="status-line" style="color:#D92D20;">${modalState.error}</div></div>` : ''}
+      ${modalState.loading ? `<div class="section"><div class="status-line"><div class="spinner"></div>Looking up site ${c.siteId} in My2N…</div></div>` : ''}`;
+
+    modalShell('Connect to My2N',
+      'Sign in with your My2N Site Admin or Company Admin account so we can retrieve the site.',
+      body,
+      `<button class="btn-back" id="btnBack">Back</button>
+       <button class="btn-continue clickable" id="btnContinue" ${modalState.loading ? 'disabled' : ''}>
+         ${modalState.loading ? 'Connecting…' : 'Continue'}
+       </button>`);
+
+    // restore typed values
+    document.querySelectorAll('[data-key]').forEach(inp => {
+      inp.value = c[inp.dataset.key] || '';
+      inp.oninput = () => { c[inp.dataset.key] = inp.value; clearErr(inp.dataset.key); };
+    });
+
+    document.getElementById('btnBack').onclick = () => { modalState.error = null; renderModal('name'); };
+    document.getElementById('btnContinue').onclick = submitCreds;
+  }
+
+  function setErr(key, msg) {
+    const e = document.querySelector(`[data-err="${key}"]`);
+    const r = document.querySelector(`[data-rule="${key}"]`);
+    if (e) e.textContent = msg;
+    if (r) r.classList.add('err');
+  }
+  function clearErr(key) {
+    const e = document.querySelector(`[data-err="${key}"]`);
+    const r = document.querySelector(`[data-rule="${key}"]`);
+    if (e) e.textContent = '';
+    if (r) r.classList.remove('err');
+  }
+
+  function submitCreds() {
+    const c = modalState.creds;
+    let ok = true;
+    const require = (key, msg) => { if (!c[key].trim()) { setErr(key, msg); ok = false; } };
+    require('username', 'Username is required.');
+    require('password', 'Password is required.');
+    ['companyId', 'siteId'].forEach(key => {
+      const label = key === 'companyId' ? 'Company ID' : 'Site ID';
+      if (!c[key].trim()) { setErr(key, `${label} is required.`); ok = false; }
+    });
+    if (!ok) return;
+
+    modalState.loading = true;
+    modalState.error = null;
+    renderModal('creds');
+
+    fetchSiteInfo({ ...c, companyId: c.companyId.trim(), siteId: c.siteId.trim() })
+      .then(site => { modalState.loading = false; modalState.site = site; renderModal('site'); })
+      .catch(err => { modalState.loading = false; modalState.error = err.message; renderModal('creds'); });
+  }
+
+  /* --- Step 3: site details returned by the lookup --- */
+  function renderStepSite() {
+    const s = modalState.site;
+    const body = `
+      <div class="section">
+        <div class="section-heading">Site Details</div>
+        <div class="settings-table">
+          ${SITE_FIELDS.map(([label, key], i) => s[key] == null ? '' : `
+            ${i ? '<div class="divider"></div>' : ''}
+            <div class="table-row-info" style="height:auto;">
+              <div class="info-label">${label}</div>
+              <div class="info-value wrap-val">${s[key]}</div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+    modalShell(s.siteName,
+      `Confirm this is the site you want to pair ${modalState.deviceName || modalState.driver} with.`,
+      body,
+      `<button class="btn-back" id="btnBack">Back</button>
+       <button class="btn-continue clickable" id="btnContinue">Continue</button>`);
+    document.getElementById('btnBack').onclick = () => renderModal('creds');
+    /* Next step (device selection on the site) isn't built yet. */
+    document.getElementById('btnContinue').onclick = closeModal;
+  }
+
+  renderLeft();
+</script>
+</body>
+</html>
