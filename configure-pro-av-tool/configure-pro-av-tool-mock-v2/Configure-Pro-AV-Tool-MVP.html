@@ -151,6 +151,13 @@ class Component extends DCLogic {
     "family-room": { x: 1400, y: 700, label: "Family Room" },
   };
 
+  // Static device-configuration metadata (serial/firmware/network identity) not modeled by the
+  // routing-oriented DEVICES list above — keyed by device id, used by the "Device Configuration"
+  // detail panel (Devices tab).
+  DEVICE_META = {
+    "eq-nax-8zsa": { serial: "L129335443", firmware: "3.002.0085.20436", typeLabel: "Audio Switcher", hostname: "DM-NAX-8ZSA-00107FB58093", ip: "10.88.109.78", mac: "00:10:7F:B5:80:93", ipId: "54", multicast: "239.8.0.1", versiports: 4 },
+  };
+
   SIGNAL_COLORS = { hdmi: "#003B71", analog_audio: "#CF9F02", toslink: "#007CA0", spdif: "#E0662F", rca: "#8E5AB8", usb: "#0D441D", aoip: "#43C5E3", aes67: "#6F7DE0", avoip: "#A79F88", bluetooth: "#1AA3C6" };
   SIGNAL_LABELS = { hdmi: "HDMI", analog_audio: "Analog", toslink: "Toslink", spdif: "S/PDIF", rca: "RCA", usb: "USB", aoip: "AoIP", avoip: "AVoIP", bluetooth: "BT" };
 
@@ -210,6 +217,11 @@ class Component extends DCLogic {
     vp: { x: 0, y: 0, z: 0.45 },
     selectedDev: null,
     dspModal: null,
+    settingsModal: null,
+    multicastEdits: {},
+    multicastSaved: {},
+    healthDashboardOn: {},
+    rebootStatus: {},
     tracedChain: null,
     outOfOrder: [],
     live: true,
@@ -494,6 +506,10 @@ class Component extends DCLogic {
     target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
     eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
     "eye-off": '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/><path d="M3 3 21 21"/>',
+    pin: '<path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/>',
+    copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',
+    trash: '<path d="M4 7h16M10 4h4a1 1 0 0 1 1 1v2H9V5a1 1 0 0 1 1-1z"/><path d="M6 7v13a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7"/><path d="M10 11v6M14 11v6"/>',
+    "arrow-circle-right": '<circle cx="12" cy="12" r="9"/><path d="M9 8l4 4-4 4M12 12h4"/>',
   };
   ic(name, size = 18, color = "currentColor", stroke = 1.8) {
     const R = React.createElement;
@@ -664,6 +680,7 @@ class Component extends DCLogic {
       ),
       s.telemetryOpen ? this.TelemetryPanel() : null,
       this.DspModal(),
+      this.SettingsModal(),
     );
   }
 
@@ -1232,6 +1249,10 @@ class Component extends DCLogic {
             style: { width: 20, height: 20, borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: this.isCollapsed(dev.id) ? "var(--blue-50)" : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, flexShrink: 0, transform: this.isCollapsed(dev.id) ? "rotate(180deg)" : "none", transition: "transform var(--dur-fast)" } },
             this.ic("chevron", 11, this.isCollapsed(dev.id) ? "var(--crestron-true-blue)" : "var(--fg-subtle)"))),
       ),
+      // Crestron device settings gear (top-right corner of the card)
+      dev.manufacturer === "Crestron" ? R("button", { key: "gear", onClick: e => { e.stopPropagation(); e.preventDefault(); this.openSettingsModal(dev.id); }, onDoubleClick: e => e.stopPropagation(), onPointerDown: e => e.stopPropagation(), className: "cp-btn", title: "Device settings",
+        style: { position: "absolute", top: -10, right: -10, width: 24, height: 24, borderRadius: "50%", border: "1px solid var(--border)", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, boxShadow: "var(--shadow-xs)", zIndex: 25 } },
+        this.gearIcon(16)) : null,
       // A-12 NAX status widget band
       dev.nax ? this.NaxWidget(dev, isOOO, dsp, sigStatus) : null,
       // Ports
@@ -1364,6 +1385,141 @@ class Component extends DCLogic {
   }
   closeDspModal() { this.setState({ dspModal: null }); }
   setDspSel(patch) { this.setState(p => ({ dspModal: { ...p.dspModal, ...patch } })); }
+
+  // ============ CRESTRON DEVICE SETTINGS MODAL (basic placeholder — spec TBD) ============
+  openSettingsModal(devId) {
+    const dev = this.deviceById(devId);
+    if (!dev) return;
+    this.setState({ settingsModal: { devId, section: "input-settings", inputIdx: 0 } });
+    this.track("canvasInteractions", "Open settings · " + dev.name);
+  }
+  closeSettingsModal() { this.setState({ settingsModal: null }); }
+  setSettingsSel(patch) { this.setState(p => ({ settingsModal: { ...p.settingsModal, ...patch } })); }
+
+  // ============ DEVICE CONFIGURATION PANEL HELPERS (Devices tab) ============
+  getMulticast(devId) {
+    const saved = this.state.multicastSaved[devId];
+    if (saved !== undefined) return saved;
+    return (this.DEVICE_META[devId] || {}).multicast || "";
+  }
+  getMulticastEdit(devId) {
+    const edit = this.state.multicastEdits[devId];
+    return edit !== undefined ? edit : this.getMulticast(devId);
+  }
+  setMulticastEdit(devId, val) { this.setState(prev => ({ multicastEdits: { ...prev.multicastEdits, [devId]: val } })); }
+  saveMulticast(devId) {
+    const val = this.getMulticastEdit(devId);
+    this.setState(prev => ({ multicastSaved: { ...prev.multicastSaved, [devId]: val } }));
+    this.track("canvasInteractions", "Save multicast address · " + (this.deviceById(devId)?.name || devId));
+  }
+  isHealthDashboardOn(devId) { const v = this.state.healthDashboardOn[devId]; return v === undefined ? true : v; }
+  toggleHealthDashboard(devId) {
+    this.setState(prev => ({ healthDashboardOn: { ...prev.healthDashboardOn, [devId]: !this.isHealthDashboardOn(devId) } }));
+    this.track("canvasInteractions", "Toggle health dashboard · " + (this.deviceById(devId)?.name || devId));
+  }
+  rebootStatusFor(devId) { return this.state.rebootStatus[devId] || "Idle"; }
+  triggerReboot(devId) {
+    if (this.rebootStatusFor(devId) !== "Idle") return;
+    this.setState(prev => ({ rebootStatus: { ...prev.rebootStatus, [devId]: "Rebooting…" } }));
+    this.track("canvasInteractions", "Reboot · " + (this.deviceById(devId)?.name || devId));
+    setTimeout(() => { this.setState(prev => ({ rebootStatus: { ...prev.rebootStatus, [devId]: "Idle" } })); }, 1800);
+  }
+  copyText(text) {
+    if (!text) return;
+    try { navigator.clipboard && navigator.clipboard.writeText(String(text)); } catch (e) {}
+  }
+  // Exact gear glyph supplied by design — rendered directly (not through ic()) since it uses its
+  // own 20x20 viewBox and a fixed stroke color rather than the shared 24x24 icon set.
+  gearIcon(size = 20) {
+    const R = React.createElement;
+    return R("svg", { width: size, height: size, viewBox: "0 0 20 20", fill: "none", style: { display: "block", flexShrink: 0 },
+      dangerouslySetInnerHTML: { __html: '<path d="M7.82888 16.1424L8.31591 17.2378C8.4607 17.5639 8.69698 17.8409 8.9961 18.0353C9.29522 18.2298 9.64434 18.3332 10.0011 18.3332C10.3579 18.3332 10.707 18.2298 11.0061 18.0353C11.3052 17.8409 11.5415 17.5639 11.6863 17.2378L12.1733 16.1424C12.3467 15.7538 12.6383 15.4297 13.0067 15.2165C13.3773 15.0027 13.8061 14.9116 14.2317 14.9563L15.4233 15.0832C15.778 15.1207 16.136 15.0545 16.4539 14.8926C16.7717 14.7307 17.0358 14.4801 17.2141 14.1711C17.3925 13.8623 17.4776 13.5084 17.4588 13.1522C17.4401 12.7961 17.3184 12.453 17.1085 12.1647L16.4029 11.1952C16.1517 10.8474 16.0175 10.4289 16.0196 9.99984C16.0195 9.57199 16.155 9.15513 16.4067 8.8091L17.1122 7.83965C17.3221 7.5513 17.4438 7.20823 17.4625 6.85207C17.4813 6.4959 17.3962 6.14195 17.2178 5.83317C17.0395 5.5242 16.7754 5.27358 16.4576 5.11169C16.1397 4.94981 15.7817 4.88361 15.427 4.92113L14.2354 5.04799C13.8098 5.09268 13.381 5.00161 13.0104 4.7878C12.6413 4.57338 12.3496 4.24764 12.177 3.85725L11.6863 2.76187C11.5415 2.43581 11.3052 2.15877 11.0061 1.96434C10.707 1.76991 10.3579 1.66645 10.0011 1.6665C9.64434 1.66645 9.29522 1.76991 8.9961 1.96434C8.69698 2.15877 8.4607 2.43581 8.31591 2.76187L7.82888 3.85725C7.65632 4.24764 7.3646 4.57338 6.99554 4.7878C6.62489 5.00161 6.1961 5.09268 5.77054 5.04799L4.57517 4.92113C4.22045 4.88361 3.86246 4.94981 3.5446 5.11169C3.22675 5.27358 2.96269 5.5242 2.78443 5.83317C2.60595 6.14195 2.52092 6.4959 2.53965 6.85207C2.55839 7.20823 2.68009 7.5513 2.88999 7.83965L3.59554 8.8091C3.84716 9.15513 3.98266 9.57199 3.98258 9.99984C3.98266 10.4277 3.84716 10.8445 3.59554 11.1906L2.88999 12.16C2.68009 12.4484 2.55839 12.7914 2.53965 13.1476C2.52092 13.5038 2.60595 13.8577 2.78443 14.1665C2.96286 14.4753 3.22696 14.7258 3.54476 14.8877C3.86257 15.0495 4.22047 15.1158 4.57517 15.0785L5.76684 14.9517C6.1924 14.907 6.62119 14.9981 6.99184 15.2119C7.36228 15.4257 7.65535 15.7515 7.82888 16.1424Z" stroke="#7B7B7E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.99961 12.4998C11.3803 12.4998 12.4996 11.3805 12.4996 9.99984C12.4996 8.61913 11.3803 7.49984 9.99961 7.49984C8.6189 7.49984 7.49961 8.61913 7.49961 9.99984C7.49961 11.3805 8.6189 12.4998 9.99961 12.4998Z" stroke="#7B7B7E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' } });
+  }
+
+  SettingsModal() {
+    const R = React.createElement;
+    const m = this.state.settingsModal;
+    if (!m) return null;
+    const dev = this.deviceById(m.devId);
+    if (!dev) return null;
+    const NAV = [
+      { id: "input-settings", label: "Input Settings", icon: "route" },
+      { id: "input-audio", label: "Input Audio", icon: "volume" },
+      { id: "output-settings", label: "Output Settings", icon: "refresh" },
+      { id: "output-audio", label: "Output Audio", icon: "volume" },
+    ];
+    const inputs = dev.inputs.length ? dev.inputs : [{ id: "none", label: "No inputs" }];
+    const idx = Math.min(m.inputIdx || 0, inputs.length - 1);
+    const port = inputs[idx];
+    const hasSig = port && port.id !== "none" && this.portHasSignal(dev.id, port.id, "input");
+    const route = hasSig ? this.state.routes.find(r => r.toDevice === dev.id && r.toPort === port.id) : null;
+    const srcDev = route ? this.deviceById(route.fromDevice) : null;
+    const connectedLabel = srcDev ? `${srcDev.name} · ${port.label}` : "No source connected";
+
+    const row = (label, value, valueColor) => R("div", { key: label, style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 0", borderBottom: "1px solid var(--neutral-100)" } },
+      R("span", { style: { fontSize: 12.5, color: "var(--fg)" } }, label),
+      R("span", { style: { fontSize: 12, fontWeight: 600, color: valueColor || "var(--fg-subtle)" } }, value));
+    const selectRow = (label, value) => R("div", { key: label, style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 0", borderBottom: "1px solid var(--neutral-100)" } },
+      R("span", { style: { fontSize: 12.5, color: "var(--fg)" } }, label),
+      R("span", { style: { display: "flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600, color: "var(--fg-subtle)" } }, value, this.ic("chevron", 11, "var(--fg-subtle)", 2)));
+    const sectionLabel = (t) => R("div", { key: "sec-" + t, style: { fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--fg-subtle)", margin: "18px 0 4px" } }, t);
+    const nameRow = R("div", { key: "name", style: { padding: "9px 0", borderBottom: "1px solid var(--neutral-100)" } },
+      R("div", { style: { fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--fg-subtle)", marginBottom: 5 } }, "Name"),
+      R("div", { style: { fontSize: 13, color: "var(--fg-strong)", fontWeight: 600 } }, port.label || "Input Name"));
+
+    const inputSettingsBody = [
+      R("div", { key: "connected", style: { fontSize: 11, fontWeight: 600, color: "var(--fg-muted)", background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", padding: "6px 10px", marginBottom: 4 } }, connectedLabel.toUpperCase()),
+      sectionLabel("About"),
+      nameRow,
+      row("Sink Detected", hasSig ? "Yes" : "Unknown", hasSig ? "var(--success)" : "var(--crestron-gold)"),
+      row("Resolution", "0000x0000px @ 00Hz"),
+      row("Source HDCP", hasSig ? "Active" : "Inactive", hasSig ? "var(--success)" : "var(--danger)"),
+      row("HDCP State", "Not Required"),
+      row("Horizontal Resolution", "0000"),
+      row("Vertical Resolution", "0000"),
+      row("Frames Per Second", "000"),
+      row("Aspect Ratio", "No Signal"),
+      row("Audio Format", "No Audio"),
+      row("Audio Channels", "0"),
+      sectionLabel("Settings"),
+      selectRow("HDCP Receiver Capability", "Auto"),
+      selectRow("EDID", "1080p, 60Hz - 2CH"),
+      selectRow("Color Depth", "8-bit"),
+    ];
+    const placeholderBody = (label) => R("div", { style: { padding: "40px 0", textAlign: "center", color: "var(--fg-subtle)", fontSize: 12.5, fontStyle: "italic" } }, label + " — coming soon");
+
+    return R("div", { onClick: () => this.closeSettingsModal(),
+      style: { position: "fixed", inset: 0, zIndex: 200, background: "rgba(15,23,32,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 28 } },
+      R("div", { onClick: e => e.stopPropagation(),
+        style: { width: "100%", maxWidth: 900, height: "100%", maxHeight: 620, background: "#fff", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-lg)", display: "flex", overflow: "hidden" } },
+        // Sidebar
+        R("div", { style: { width: 210, flexShrink: 0, background: "var(--bg-subtle)", borderRight: "1px solid var(--border)", display: "flex", flexDirection: "column", padding: "18px 14px" } },
+          R("div", { style: { fontSize: 17, fontWeight: 700, color: "var(--fg-strong)", fontFamily: "var(--font-display)", marginBottom: 14 } }, "Settings"),
+          R("div", { style: { display: "flex", alignItems: "center", gap: 7, padding: "7px 9px", background: "#fff", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", marginBottom: 16 } },
+            this.ic("search", 13, "var(--fg-subtle)"),
+            R("input", { readOnly: true, placeholder: "Search", style: { border: "none", background: "none", outline: "none", fontSize: 12, width: "100%", color: "var(--fg)", fontFamily: "var(--font-body)" } })),
+          R("div", { style: { fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--fg-subtle)", padding: "0 9px 6px" } }, "General"),
+          NAV.map(n => {
+            const active = m.section === n.id;
+            return R("button", { key: n.id, onClick: () => this.setSettingsSel({ section: n.id }), className: "cp-btn",
+              style: { display: "flex", alignItems: "center", gap: 9, width: "100%", textAlign: "left", padding: "8px 9px", border: "none", borderRadius: "var(--radius-sm)", cursor: "pointer",
+                background: active ? "var(--blue-50)" : "transparent", color: active ? "var(--crestron-true-blue)" : "var(--fg)", fontSize: 12.5, fontWeight: active ? 700 : 500, marginBottom: 2 } },
+              this.ic(n.icon, 14, active ? "var(--crestron-true-blue)" : "var(--fg-muted)"), n.label);
+          })),
+        // Body
+        R("div", { style: { flex: 1, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden" } },
+          R("div", { style: { display: "flex", alignItems: "center", padding: "18px 24px 0", flexShrink: 0 } },
+            R("div", { style: { fontSize: 20, fontWeight: 700, color: "var(--fg-strong)", fontFamily: "var(--font-display)", flex: 1 } }, NAV.find(n => n.id === m.section)?.label.replace(" Settings", "").replace(" Audio", " Audio") || "Settings"),
+            R("button", { onClick: () => this.closeSettingsModal(), className: "cp-btn", style: { background: "none", border: "none", cursor: "pointer", display: "flex", padding: 4, color: "var(--fg-muted)" } }, this.ic("x", 18))),
+          m.section === "input-settings" ? R("div", { style: { display: "flex", gap: 6, padding: "16px 24px 0", flexShrink: 0, flexWrap: "wrap" } },
+            inputs.map((p, i) => R("button", { key: p.id, onClick: () => this.setSettingsSel({ inputIdx: i }), className: "cp-btn",
+              style: { padding: "5px 12px", borderRadius: "var(--radius-pill)", border: `1px solid ${i === idx ? "var(--crestron-true-blue)" : "var(--border)"}`, background: i === idx ? "var(--blue-50)" : "#fff",
+                color: i === idx ? "var(--crestron-true-blue)" : "var(--fg-muted)", fontSize: 11.5, fontWeight: i === idx ? 700 : 500, cursor: "pointer" } }, "Input " + (i + 1)))) : null,
+          R("div", { style: { flex: 1, overflowY: "auto", padding: "10px 24px 20px" } },
+            m.section === "input-settings" ? inputSettingsBody : placeholderBody(NAV.find(n => n.id === m.section)?.label || "")),
+        ),
+      ));
+  }
 
   DspModal() {
     const R = React.createElement;
@@ -1565,6 +1721,7 @@ class Component extends DCLogic {
   DeviceDetailPanel(device) {
     const R = React.createElement;
     if (!device) return R("div", { style: { flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--fg-muted)" } }, "Select a device");
+    if (device.manufacturer === "Crestron" && device.type !== "Speaker") return this.CrestronDevicePanel(device);
     const rows = [["Status", device.status, device.status === "Online" ? "var(--success)" : "var(--danger)"], ["Model", device.model], ["Manufacturer", device.manufacturer], ["Type", device.type], ["Room", device.room]];
     const sectionHdr = (t) => R("div", { style: { padding: "12px 16px", borderBottom: "1px solid var(--border)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "var(--fg-subtle)", letterSpacing: "0.07em" } }, t);
     return R("div", { style: { flex: 1, overflowY: "auto", padding: "26px 30px", background: "var(--bg-muted)" } },
@@ -1577,6 +1734,122 @@ class Component extends DCLogic {
             device.inputs.map(p => R("div", { key: p.id, style: { display: "flex", alignItems: "center", gap: 7, padding: "7px 16px", borderBottom: "1px solid var(--neutral-100)", fontSize: 12 } }, R("div", { style: { width: 6, height: 6, borderRadius: "50%", background: this.SIGNAL_COLORS[p.signal] } }), p.label))),
           R("div", null, R("div", { style: { padding: "7px 16px", fontSize: 10, fontWeight: 700, color: "var(--success)", textTransform: "uppercase", borderBottom: "1px solid var(--border)", letterSpacing: "0.05em" } }, `Outputs (${device.outputs.length})`),
             device.outputs.map(p => R("div", { key: p.id, style: { display: "flex", alignItems: "center", gap: 7, padding: "7px 16px", borderBottom: "1px solid var(--neutral-100)", fontSize: 12 } }, R("div", { style: { width: 6, height: 6, borderRadius: "50%", background: this.SIGNAL_COLORS[p.signal] } }), p.label)))) ));
+  }
+
+  // ============ CRESTRON DEVICE CONFIGURATION PANEL (Devices tab) ============
+  // Sticky title/location header, a scrollable body (About / Setup / Connections / Health +
+  // the Repair Device action), and a sticky Remove Device footer pinned outside the scroll area.
+  // Setup (multicast) and Connections (versiports) only render when DEVICE_META has real data for
+  // that field — most Crestron devices beyond the DM-NAX-8ZSA don't have a metadata entry yet.
+  CrestronDevicePanel(device) {
+    const R = React.createElement;
+    const s = this.state;
+    const meta = this.DEVICE_META[device.id] || {};
+
+    const copyBtn = (text) => R("button", { onClick: e => { e.stopPropagation(); this.copyText(text); }, className: "cp-btn", title: "Copy",
+      style: { background: "none", border: "none", cursor: "pointer", display: "flex", padding: 2, color: "var(--fg-subtle)", flexShrink: 0 } }, this.ic("copy", 15, "var(--fg-subtle)"));
+
+    const aboutRow = (label, value, opts = {}) => R("div", { key: label, style: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "13px 18px", borderBottom: "1px solid var(--neutral-100)" } },
+      R("span", { style: { fontSize: 14, color: "var(--fg)", flexShrink: 0 } }, label),
+      R("div", { style: { display: "flex", alignItems: "center", gap: 6, minWidth: 0 } },
+        opts.link
+          ? R("a", { href: "#", onClick: e => e.preventDefault(), style: { fontSize: 13, fontWeight: 600, color: "var(--crestron-true-blue)", textDecoration: "underline", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, value)
+          : R("span", { style: { fontSize: 13, fontWeight: 600, color: opts.color || "var(--fg-subtle)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, value),
+        opts.copy ? copyBtn(value) : null));
+
+    const sectionRow = (label, extra) => R("div", { key: "sec-" + label, style: { display: "flex", alignItems: "center", justifyContent: "space-between", margin: "22px 0 8px" } },
+      R("div", { style: { display: "flex", alignItems: "center", gap: 6 } },
+        R("span", { style: { fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--fg-subtle)" } }, label),
+        extra?.icon ? this.ic(extra.icon, 14, "var(--fg-subtle)") : null),
+      extra?.action || null);
+
+    const card = (children, key) => R("div", { key, style: { background: "#fff", borderRadius: "var(--radius-lg)", border: "1px solid var(--border)", overflow: "hidden", boxShadow: "var(--shadow-xs)" } }, children);
+
+    const toggle = (on, onClick) => R("button", { onClick, className: "cp-btn", style: { width: 42, height: 24, borderRadius: 12, background: on ? "var(--crestron-true-blue)" : "var(--neutral-300)", position: "relative", flexShrink: 0, border: "none", cursor: "pointer", padding: 0 } },
+      R("div", { style: { position: "absolute", left: on ? 20 : 2, top: 2, width: 20, height: 20, borderRadius: "50%", background: "#fff", transition: "left var(--dur-fast)", boxShadow: "var(--shadow-xs)" } }));
+
+    const roomLabel = this.roomName(device.room);
+    const nameBlock = R("div", { key: "name", style: { padding: "14px 18px 16px", borderBottom: "1px solid var(--neutral-100)" } },
+      R("div", { style: { fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--fg-subtle)", marginBottom: 6 } }, "Device Name"),
+      R("div", { style: { fontSize: 16, fontWeight: 700, color: "var(--fg-strong)" } }, device.name));
+
+    const aboutCard = card([
+      nameBlock,
+      aboutRow("Status", device.status, { color: device.status === "Online" ? "var(--success)" : "var(--danger)" }),
+      aboutRow("Model", device.model),
+      aboutRow("Manufacturer", device.manufacturer),
+      aboutRow("Serial Number", meta.serial || "—", { copy: !!meta.serial }),
+      aboutRow("Firmware Version", meta.firmware || "—"),
+      aboutRow("Type", meta.typeLabel || device.type),
+      aboutRow("Hostname", meta.hostname || "—", { copy: !!meta.hostname, link: !!meta.hostname }),
+      aboutRow("IP Address", meta.ip || "—", { copy: !!meta.ip, link: !!meta.ip }),
+      aboutRow("MAC Address", meta.mac || "—", { copy: !!meta.mac }),
+      aboutRow("IP ID", meta.ipId || "—"),
+      aboutRow("Room", roomLabel),
+    ], "about");
+
+    const hasSetup = meta.multicast !== undefined;
+    const multicastVal = this.getMulticast(device.id);
+    const multicastEdit = this.getMulticastEdit(device.id);
+    const multicastDirty = multicastEdit !== multicastVal;
+    const setupCard = hasSetup ? card([
+      R("div", { key: "mc", style: { padding: "14px 18px 16px" } },
+        R("div", { style: { fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--fg-subtle)", marginBottom: 6 } }, "Multicast Address"),
+        R("input", { value: multicastEdit, onChange: e => this.setMulticastEdit(device.id, e.target.value),
+          style: { width: "100%", border: "none", outline: "none", fontSize: 15, color: "var(--fg-strong)", fontFamily: "var(--font-mono)", padding: "4px 0", borderBottom: "1px solid var(--border)", background: "transparent" } })),
+    ], "setup") : null;
+
+    const versiportCount = meta.versiports || 0;
+    const connectionsCard = versiportCount ? card(
+      Array.from({ length: versiportCount }, (_, i) => R("div", { key: "vp" + i, style: { display: "flex", alignItems: "center", gap: 12, padding: "13px 18px", borderBottom: i < versiportCount - 1 ? "1px solid var(--neutral-100)" : "none" } },
+        this.ic("arrow-circle-right", 20, "var(--fg-strong)", 1.6),
+        R("div", null,
+          R("div", { style: { fontSize: 14, fontWeight: 700, color: "var(--fg-strong)" } }, `Versiport Port #${i + 1}`),
+          R("div", { style: { fontSize: 12.5, color: "var(--fg-subtle)", marginTop: 2 } }, "No Devices")))),
+      "connections") : null;
+
+    const rebootStatus = this.rebootStatusFor(device.id);
+    const healthOn = this.isHealthDashboardOn(device.id);
+    const healthCard = card([
+      R("div", { key: "reboot", style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 18px", borderBottom: "1px solid var(--neutral-100)" } },
+        R("span", { style: { fontSize: 14, color: "var(--fg)" } }, "Reboot"),
+        R("div", { style: { display: "flex", alignItems: "center", gap: 8 } },
+          R("span", { style: { fontSize: 13, fontWeight: 600, color: "var(--fg-subtle)" } }, rebootStatus),
+          R("button", { onClick: () => this.triggerReboot(device.id), className: "cp-btn", title: "Reboot device", disabled: rebootStatus !== "Idle",
+            style: { background: "none", border: "none", cursor: rebootStatus === "Idle" ? "pointer" : "default", display: "flex", padding: 2, color: "var(--fg-strong)" } },
+            this.ic("refresh", 16, "var(--fg-strong)", 1.8)))),
+      R("div", { key: "hd", style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 18px" } },
+        R("span", { style: { fontSize: 14, color: "var(--fg)" } }, "Show in the Health Dashboard"),
+        toggle(healthOn, () => this.toggleHealthDashboard(device.id))),
+    ], "health");
+
+    const wideBtn = (key, label, icon, bg, color, onClick) => R("button", { key, onClick, className: "cp-btn",
+      style: { display: "flex", alignItems: "center", justifyContent: "center", gap: 9, width: "100%", padding: "14px 0", borderRadius: "var(--radius-lg)", border: "none", background: bg, color, fontSize: 15, fontWeight: 700, cursor: "pointer" } },
+      this.ic(icon, 18, color, 2), label);
+
+    return R("div", { style: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden", background: "var(--bg-muted)" } },
+      // Sticky header — never scrolls
+      R("div", { style: { flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "26px 30px 18px" } },
+        R("h2", { style: { fontSize: 22, fontWeight: 700, margin: 0, color: "var(--fg-strong)", fontFamily: "var(--font-display)" } }, device.name + " Configuration"),
+        R("div", { style: { width: 40, height: 40, borderRadius: "50%", background: "#fff", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "var(--shadow-xs)", flexShrink: 0 } },
+          this.ic("pin", 18, "var(--fg)", 1.8))),
+      // Scrollable body — About / Setup / Connections / Health + Repair Device
+      R("div", { style: { flex: 1, overflowY: "auto", padding: "0 30px 20px" } },
+        sectionRow("About"),
+        aboutCard,
+        hasSetup ? sectionRow("Setup", { icon: "alert", action: R("button", { onClick: () => this.saveMulticast(device.id), disabled: !multicastDirty, className: "cp-btn",
+          style: { padding: "6px 14px", borderRadius: "var(--radius-pill)", border: "none", background: multicastDirty ? "var(--crestron-true-blue)" : "var(--neutral-200)", color: multicastDirty ? "#fff" : "var(--fg-subtle)", fontSize: 12, fontWeight: 700, cursor: multicastDirty ? "pointer" : "default" } }, "Save changes") }) : null,
+        setupCard,
+        versiportCount ? sectionRow("Connections") : null,
+        connectionsCard,
+        sectionRow("Health"),
+        healthCard,
+        R("div", { key: "repair", style: { marginTop: 16 } }, wideBtn("repair-btn", "Repair Device", "refresh", "#2b2b2e", "#fff", () => this.track("canvasInteractions", "Repair device · " + device.name))),
+      ),
+      // Sticky footer — never scrolls
+      R("div", { style: { flexShrink: 0, padding: "12px 30px 22px" } },
+        wideBtn("remove-btn", "Remove Device", "trash", "var(--crestron-true-blue)", "#fff", () => this.track("canvasInteractions", "Remove device · " + device.name))),
+    );
   }
 
   GenericPanel() {
