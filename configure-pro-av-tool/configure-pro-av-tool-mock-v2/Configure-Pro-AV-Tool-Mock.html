@@ -23,6 +23,10 @@
   input[type=range].cp-range::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--crestron-true-blue); cursor: pointer; border: 2px solid #fff; box-shadow: var(--shadow-xs); }
   @keyframes cpPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
   @keyframes cpRing { 0%,100% { box-shadow: 0 0 0 0 rgba(67,197,227,0.55); } 50% { box-shadow: 0 0 0 3px rgba(67,197,227,0.0); } }
+  /* Port row: the gear stays out of the way until you're actually on that row. */
+  .cp-port-gear { opacity: 0; transition: opacity var(--dur-fast, 0.12s); }
+  .cp-port-row:hover .cp-port-gear { opacity: 0.6; }
+  .cp-port-gear:hover { opacity: 1; }
   @keyframes cpMeter { 0%,100% { transform: scaleY(0.55); } 50% { transform: scaleY(1); } }
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-thumb { background: var(--neutral-300); border-radius: 999px; border: 2px solid transparent; background-clip: content-box; }
@@ -232,6 +236,8 @@ class Component extends DCLogic {
     selectedDev: null,
     dspModal: null,
     settingsModal: null,
+    audioLevels: {},
+    mixSelect: {},
     multicastEdits: {},
     multicastSaved: {},
     healthDashboardOn: {},
@@ -1321,46 +1327,58 @@ class Component extends DCLogic {
       return R("div", { style: { position: "relative", height: this.PORT_H + this.CARD_PAD * 2, display: "flex", alignItems: "center", justifyContent: "center" } },
         R("span", { style: { fontSize: 10, fontStyle: "italic", color: "var(--fg-subtle)" } }, "No active connections"));
     }
-    // Prototype port dot: hollow ring in the signal color, fills solid when a route is present.
-    // Clicking a port row marks it for hiding (red X); the header Hide button commits the selection.
+    // A port row carries three separate actions, so each one owns its own hit area and its own
+    // affordance rather than sharing one row-wide hover:
+    //   dot   -> start / accept a route (crosshair)
+    //   label -> mark the port for hiding (red tint + red X)
+    //   gear  -> open that port's settings
+    // The red tint is confined to the label zone, and each column is held to just under half the
+    // card width so the input and output rows can never overlap in the middle.
+    const COL_W = "calc(50% - 4px)";
+    const portRow = (p, i, side) => {
+      const isIn = side === "input";
+      const dragging = !!wp;
+      const compatible = isIn && dragging && this.signalsCompatible(wp.signal, p.signal) && wp.fromDev !== dev.id;
+      const incompat = isIn && dragging && !compatible;
+      const routeable = this.isRouteable(p.signal);
+      const col = !routeable ? "var(--neutral-400)" : (this.SIGNAL_COLORS[p.signal] || "var(--crestron-mid-blue)");
+      const hasSig = this.portHasSignal(dev.id, p.id, side);
+      const sel = this.isPortSel(dev.id, side, p.id);
+      const dotSize = compatible ? 13 : 10;
+      const dot = R("div", { key: "dot", "data-port-dev": dev.id, "data-port-id": p.id, "data-port-type": side,
+        title: !routeable ? (this.SIGNAL_LABELS[p.signal] || "This signal type") + " is not routeable"
+          : (isIn ? "Drop a wire here to route into this input" : "Drag from here to create a route"),
+        onClick: e => e.stopPropagation(),
+        onPointerDown: e => { e.stopPropagation(); if (!isIn && routeable) this.startWireDrag(dev.id, p.id, e); },
+        style: { width: dotSize, height: dotSize, borderRadius: "50%", boxSizing: "border-box", flexShrink: 0, zIndex: 30, transition: "all 0.15s",
+          background: !routeable ? "var(--neutral-300)" : (hasSig ? col : "#fff"), border: `2px solid ${col}`,
+          cursor: !routeable ? "not-allowed" : (isIn ? "pointer" : "crosshair"),
+          marginLeft: isIn ? -5 : 0, marginRight: isIn ? 0 : -5,
+          boxShadow: compatible ? `0 0 0 2px ${col}, 0 0 8px ${col}` : "none",
+          animation: hasSig && !dragging && routeable ? "cpRing 2.4s infinite" : "none" } });
+      // Label zone = the hide-marking control. Hover tint and the marked state both live here.
+      const label = R("div", { key: "label",
+        title: sel ? "Marked to hide \u2014 click to unmark" : "Click to mark this port for hiding",
+        onPointerDown: e => e.stopPropagation(),
+        onClick: e => { e.stopPropagation(); this.togglePortSel(dev.id, side, p.id); },
+        onMouseEnter: e => { if (!sel) e.currentTarget.style.background = "rgba(214,44,44,0.08)"; },
+        onMouseLeave: e => { e.currentTarget.style.background = sel ? "rgba(214,44,44,0.10)" : "transparent"; },
+        style: { flex: 1, minWidth: 0, height: this.PORT_H - 6, display: "flex", alignItems: "center", justifyContent: isIn ? "flex-start" : "flex-end",
+          padding: "0 5px", margin: isIn ? "0 0 0 6px" : "0 6px 0 0", borderRadius: "var(--radius-sm)", cursor: "pointer",
+          background: sel ? "rgba(214,44,44,0.10)" : "transparent", transition: "background 0.12s" } },
+        R("span", { style: { fontSize: 10, color: !routeable ? "var(--fg-subtle)" : (hasSig ? "var(--fg)" : "var(--fg-subtle)"), fontWeight: hasSig && routeable ? 700 : 400,
+          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", pointerEvents: "none" } }, p.label));
+      const gear = this.portGear(dev, side, p);
+      return R("div", { key: p.id, className: "cp-port-row",
+        onPointerDown: e => e.stopPropagation(),
+        style: { position: "absolute", [isIn ? "left" : "right"]: 0, width: COL_W, top: this.CARD_PAD + i * this.PORT_H, height: this.PORT_H,
+          display: "flex", alignItems: "center", padding: isIn ? "0 2px 0 0" : "0 0 0 2px", opacity: incompat ? 0.22 : 1 } },
+        isIn ? [dot, label, gear] : [gear, label, dot],
+        sel ? this.portXBadge(isIn ? "left" : "right") : null);
+    };
     return R("div", { style: { position: "relative", height: rows * this.PORT_H + this.CARD_PAD * 2 } },
-      inputs.map((p, i) => {
-        const dragging = !!wp;
-        const compatible = dragging && this.signalsCompatible(wp.signal, p.signal) && wp.fromDev !== dev.id;
-        const incompat = dragging && !compatible;
-        const routeable = this.isRouteable(p.signal);
-        const col = !routeable ? "var(--neutral-400)" : (this.SIGNAL_COLORS[p.signal] || "var(--crestron-mid-blue)");
-        const hasSig = this.portHasSignal(dev.id, p.id, "input");
-        const sel = this.isPortSel(dev.id, "input", p.id);
-        return R("div", { key: p.id,
-          onPointerDown: e => e.stopPropagation(),
-          onClick: e => { e.stopPropagation(); this.togglePortSel(dev.id, "input", p.id); },
-          onMouseEnter: e => { if (!sel) e.currentTarget.style.background = "rgba(214,44,44,0.08)"; },
-          onMouseLeave: e => { e.currentTarget.style.background = sel ? "rgba(214,44,44,0.10)" : "transparent"; },
-          style: { position: "absolute", left: 0, width: "58%", top: this.CARD_PAD + i * this.PORT_H, height: this.PORT_H, display: "flex", alignItems: "center", paddingLeft: 4, cursor: "pointer", borderRadius: "var(--radius-sm)", background: sel ? "rgba(214,44,44,0.10)" : "transparent", opacity: incompat ? 0.22 : 1, transition: "background 0.12s" } },
-          R("div", { "data-port-dev": dev.id, "data-port-id": p.id, "data-port-type": "input", title: routeable ? undefined : "Bluetooth is not routeable",
-            style: { width: compatible ? 13 : 10, height: compatible ? 13 : 10, borderRadius: "50%", background: !routeable ? "var(--neutral-300)" : (hasSig ? col : "#fff"), border: `2px solid ${col}`, cursor: routeable ? "pointer" : "not-allowed", marginLeft: -5, flexShrink: 0, zIndex: 30, transition: "all 0.15s",
-              boxShadow: compatible ? `0 0 0 2px ${col}, 0 0 8px ${col}` : "none", animation: hasSig && !dragging && routeable ? "cpRing 2.4s infinite" : "none" } }),
-          R("span", { style: { fontSize: 10, color: !routeable ? "var(--fg-subtle)" : (hasSig ? "var(--fg)" : "var(--fg-subtle)"), fontWeight: hasSig && routeable ? 700 : 400, marginLeft: 7, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", pointerEvents: "none" } }, p.label),
-          sel ? this.portXBadge("left") : null);
-      }),
-      outputs.map((p, i) => {
-        const routeable = this.isRouteable(p.signal);
-        const col = !routeable ? "var(--neutral-400)" : (this.SIGNAL_COLORS[p.signal] || "var(--crestron-mid-blue)");
-        const hasSig = this.portHasSignal(dev.id, p.id, "output");
-        const sel = this.isPortSel(dev.id, "output", p.id);
-        return R("div", { key: p.id,
-          onPointerDown: e => e.stopPropagation(),
-          onClick: e => { e.stopPropagation(); this.togglePortSel(dev.id, "output", p.id); },
-          onMouseEnter: e => { if (!sel) e.currentTarget.style.background = "rgba(214,44,44,0.08)"; },
-          onMouseLeave: e => { e.currentTarget.style.background = sel ? "rgba(214,44,44,0.10)" : "transparent"; },
-          style: { position: "absolute", right: 0, width: "58%", top: this.CARD_PAD + i * this.PORT_H, height: this.PORT_H, display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 4, cursor: "pointer", borderRadius: "var(--radius-sm)", background: sel ? "rgba(214,44,44,0.10)" : "transparent", transition: "background 0.12s" } },
-          R("span", { style: { fontSize: 10, color: !routeable ? "var(--fg-subtle)" : (hasSig ? "var(--fg)" : "var(--fg-subtle)"), fontWeight: hasSig && routeable ? 700 : 400, marginRight: 7, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", pointerEvents: "none" } }, p.label),
-          R("div", { "data-port-dev": dev.id, "data-port-id": p.id, "data-port-type": "output", title: routeable ? undefined : "Bluetooth is not routeable",
-            style: { width: 10, height: 10, borderRadius: "50%", background: !routeable ? "var(--neutral-300)" : (hasSig ? col : "#fff"), border: `2px solid ${col}`, cursor: routeable ? "crosshair" : "not-allowed", marginRight: -5, flexShrink: 0, zIndex: 30,
-              animation: hasSig && routeable ? "cpRing 2.4s infinite" : "none" }, onClick: e => e.stopPropagation(), onPointerDown: e => routeable && this.startWireDrag(dev.id, p.id, e) }),
-          sel ? this.portXBadge("right") : null);
-      }),
+      inputs.map((p, i) => portRow(p, i, "input")),
+      outputs.map((p, i) => portRow(p, i, "output")),
     );
   }
 
@@ -1399,15 +1417,98 @@ class Component extends DCLogic {
   closeDspModal() { this.setState({ dspModal: null }); }
   setDspSel(patch) { this.setState(p => ({ dspModal: { ...p.dspModal, ...patch } })); }
 
-  // ============ CRESTRON DEVICE SETTINGS MODAL (basic placeholder — spec TBD) ============
-  openSettingsModal(devId) {
+  // ============ CRESTRON DEVICE SETTINGS MODAL ============
+  // Four sections mirroring the Configure Pro settings design — Input Settings / Input Audio /
+  // Output Settings / Output Audio. Two entry points: the card's corner gear (lands on Input
+  // Settings) and the small per-port gear, which jumps straight to that port's section with the
+  // port already selected.
+  SETTINGS_NAV = [
+    { id: "input-settings", label: "Input Settings", title: "Inputs", icon: "arrow-circle-right", side: "input" },
+    { id: "input-audio", label: "Input Audio", title: "Input Audio", icon: "volume", side: "input" },
+    { id: "output-settings", label: "Output Settings", title: "Outputs", icon: "arrow-circle-right", side: "output" },
+    { id: "output-audio", label: "Output Audio", title: "Output Audio", icon: "volume", side: "output" },
+  ];
+  settingsPorts(dev, side) { return (side === "output" ? dev.outputs : dev.inputs) || []; }
+  // opts: { section, side, portId } — a port gear passes side + portId so the modal opens with
+  // that exact input/output selected.
+  openSettingsModal(devId, opts = {}) {
     const dev = this.deviceById(devId);
     if (!dev) return;
-    this.setState({ settingsModal: { devId, section: "input-settings", inputIdx: 0 } });
-    this.track("canvasInteractions", "Open settings · " + dev.name);
+    const side = opts.side || "input";
+    const section = opts.section || (side === "output" ? "output-settings" : "input-settings");
+    const idx = Math.max(0, this.settingsPorts(dev, side).findIndex(p => p.id === opts.portId));
+    this.setState({ settingsModal: { devId, section, inputIdx: side === "input" ? idx : 0, outputIdx: side === "output" ? idx : 0 } });
+    this.track("canvasInteractions", "Open settings \u00b7 " + dev.name + (opts.portId ? " \u00b7 " + opts.portId : ""));
   }
   closeSettingsModal() { this.setState({ settingsModal: null }); }
   setSettingsSel(patch) { this.setState(p => ({ settingsModal: { ...p.settingsModal, ...patch } })); }
+
+  // ---- Audio-screen state (prototype only): per-port fader level and per-output mix source ----
+  levelKey(devId, side, portId) { return devId + "|" + side + "|" + portId; }
+  getLevel(devId, side, portId, dflt = 0) {
+    const v = this.state.audioLevels[this.levelKey(devId, side, portId)];
+    return v === undefined ? dflt : v;
+  }
+  setLevel(devId, side, portId, val) {
+    const key = this.levelKey(devId, side, portId);
+    const clamped = Math.max(side === "output" ? -120 : -10, Math.min(side === "output" ? 0 : 10, val));
+    this.setState(prev => ({ audioLevels: { ...prev.audioLevels, [key]: clamped } }));
+  }
+  getMixSelect(devId) { return this.state.mixSelect[devId] || "USB"; }
+  setMixSelect(devId, val) { this.setState(prev => ({ mixSelect: { ...prev.mixSelect, [devId]: val } })); }
+
+  // Small gear shown on each port row; opens the settings modal focused on that port.
+  portGear(dev, side, p) {
+    const R = React.createElement;
+    return R("button", { key: "g-" + p.id, className: "cp-btn cp-port-gear", title: "Port settings",
+      onClick: e => { e.stopPropagation(); e.preventDefault(); this.openSettingsModal(dev.id, { side, portId: p.id }); },
+      onPointerDown: e => e.stopPropagation(), onDoubleClick: e => e.stopPropagation(),
+      style: { width: 14, height: 14, flexShrink: 0, border: "none", background: "transparent", padding: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" } },
+      this.gearIcon(11));
+  }
+
+  // ---- Fader / meter primitives used by the two audio screens ----
+  vFader(value, min, max, onChange, h) {
+    const R = React.createElement;
+    return R("div", { style: { width: 30, height: h, position: "relative", flexShrink: 0 } },
+      R("input", { type: "range", min, max, value, onChange: e => onChange(parseInt(e.target.value, 10)),
+        style: { position: "absolute", width: h, height: 30, left: (30 - h) / 2, top: h / 2 - 15, transform: "rotate(-90deg)", accentColor: "#02AADB", cursor: "pointer" } }));
+  }
+  vMeter(pct, h) {
+    const R = React.createElement;
+    return R("div", { style: { width: 8, height: h, borderRadius: 7, background: "var(--neutral-200)", position: "relative", overflow: "hidden", flexShrink: 0 } },
+      R("div", { style: { position: "absolute", left: 0, right: 0, bottom: 0, height: Math.max(0, Math.min(100, pct)) + "%",
+        background: "linear-gradient(180deg, #E72424 0%, #E4BB13 24.52%, #03C03C 50.48%)", backgroundSize: "100% " + h + "px", backgroundPosition: "bottom", borderRadius: 6 } }));
+  }
+  scaleTicks(labels, h) {
+    const R = React.createElement;
+    return R("div", { style: { display: "flex", flexDirection: "column", justifyContent: "space-between", height: h, fontSize: 9, color: "var(--neutral-400)", fontFamily: "var(--font-mono)", flexShrink: 0 } },
+      labels.map((t, i) => R("span", { key: i }, t)));
+  }
+  // One mixer channel: caption, fader + VU, numeric level with -/+, mute dot.
+  ChannelStrip(o) {
+    const R = React.createElement;
+    const H = 250;
+    const pct = ((o.value - o.min) / (o.max - o.min)) * 100;
+    return R("div", { key: o.key, style: { width: o.wide ? 150 : 118, flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 14, padding: "10px 6px",
+      background: "#fff", borderRadius: 16, border: o.master ? "1.5px solid #8E8E93" : "none", boxShadow: "var(--shadow-sm)" } },
+      R("div", { style: { width: "100%", padding: "0 4px" } },
+        R("div", { style: { fontSize: 9.5, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--fg-subtle)" } }, o.caption),
+        R("div", { style: { fontSize: 13, color: "var(--fg-strong)", padding: "3px 0", borderBottom: "1px solid var(--border)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, o.name)),
+      R("div", { style: { display: "flex", alignItems: "flex-start", gap: 6 } },
+        this.vFader(o.value, o.min, o.max, o.onChange, H),
+        this.scaleTicks(o.ticks, H),
+        this.vMeter(o.meter, H)),
+      R("div", { style: { width: "100%", padding: "0 4px" } },
+        R("div", { style: { fontSize: 9.5, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--fg-subtle)" } }, o.master ? "Master Level" : "Level (dB)"),
+        R("div", { style: { display: "flex", alignItems: "center", gap: 6, borderBottom: "1px solid var(--border)", padding: "2px 0" } },
+          R("span", { style: { flex: 1, fontSize: 15, color: "var(--fg-strong)", fontFamily: "var(--font-mono)" } }, o.value),
+          R("button", { className: "cp-btn", onClick: () => o.onChange(o.value - o.step), style: { border: "none", background: "none", cursor: "pointer", padding: 0, display: "flex" } }, this.ic("minus", 15, "var(--fg)")),
+          R("button", { className: "cp-btn", onClick: () => o.onChange(o.value + o.step), style: { border: "none", background: "none", cursor: "pointer", padding: 0, display: "flex" } }, this.ic("plus", 15, "var(--fg)")))),
+      R("div", { style: { width: 16, height: 16, borderRadius: "50%", background: "var(--neutral-100)", border: "2px solid var(--neutral-300)" } }),
+      o.speaker ? R("div", { style: { width: 44, height: 32, borderRadius: 8, background: "var(--bg-muted)", display: "flex", alignItems: "center", justifyContent: "center" } }, this.ic("volume", 16, "var(--fg)")) : null);
+  }
+
 
   // ============ DEVICE CONFIGURATION PANEL HELPERS (Devices tab) ============
   getMulticast(devId) {
@@ -1455,81 +1556,146 @@ class Component extends DCLogic {
     if (!m) return null;
     const dev = this.deviceById(m.devId);
     if (!dev) return null;
-    const NAV = [
-      { id: "input-settings", label: "Input Settings", icon: "route" },
-      { id: "input-audio", label: "Input Audio", icon: "volume" },
-      { id: "output-settings", label: "Output Settings", icon: "refresh" },
-      { id: "output-audio", label: "Output Audio", icon: "volume" },
-    ];
-    const inputs = dev.inputs.length ? dev.inputs : [{ id: "none", label: "No inputs" }];
-    const idx = Math.min(m.inputIdx || 0, inputs.length - 1);
-    const port = inputs[idx];
-    const hasSig = port && port.id !== "none" && this.portHasSignal(dev.id, port.id, "input");
-    const route = hasSig ? this.state.routes.find(r => r.toDevice === dev.id && r.toPort === port.id) : null;
-    const srcDev = route ? this.deviceById(route.fromDevice) : null;
-    const connectedLabel = srcDev ? `${srcDev.name} · ${port.label}` : "No source connected";
+    const nav = this.SETTINGS_NAV.find(n => n.id === m.section) || this.SETTINGS_NAV[0];
+    const side = nav.side;
+    const ports = this.settingsPorts(dev, side);
+    const idxKey = side === "output" ? "outputIdx" : "inputIdx";
+    const idx = ports.length ? Math.min(m[idxKey] || 0, ports.length - 1) : 0;
+    const port = ports[idx] || { id: "none", label: side === "output" ? "No outputs" : "No inputs" };
+    const chipWord = side === "output" ? "Output " : "Input ";
+    const hasSig = port.id !== "none" && this.portHasSignal(dev.id, port.id, side);
+    const route = hasSig ? this.state.routes.find(r => side === "output"
+      ? (r.fromDevice === dev.id && r.fromPort === port.id)
+      : (r.toDevice === dev.id && r.toPort === port.id)) : null;
+    const otherDev = route ? this.deviceById(side === "output" ? route.toDevice : route.fromDevice) : null;
+    const banner = "[[" + (otherDev ? otherDev.name : "NOT CONNECTED") + " \u2014 " + port.label + "]]";
 
-    const row = (label, value, valueColor) => R("div", { key: label, style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 0", borderBottom: "1px solid var(--neutral-100)" } },
-      R("span", { style: { fontSize: 12.5, color: "var(--fg)" } }, label),
-      R("span", { style: { fontSize: 12, fontWeight: 600, color: valueColor || "var(--fg-subtle)" } }, value));
-    const selectRow = (label, value) => R("div", { key: label, style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 0", borderBottom: "1px solid var(--neutral-100)" } },
-      R("span", { style: { fontSize: 12.5, color: "var(--fg)" } }, label),
-      R("span", { style: { display: "flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600, color: "var(--fg-subtle)" } }, value, this.ic("chevron", 11, "var(--fg-subtle)", 2)));
-    const sectionLabel = (t) => R("div", { key: "sec-" + t, style: { fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--fg-subtle)", margin: "18px 0 4px" } }, t);
-    const nameRow = R("div", { key: "name", style: { padding: "9px 0", borderBottom: "1px solid var(--neutral-100)" } },
-      R("div", { style: { fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--fg-subtle)", marginBottom: 5 } }, "Name"),
-      R("div", { style: { fontSize: 13, color: "var(--fg-strong)", fontWeight: 600 } }, port.label || "Input Name"));
+    // ---- shared row builders (match the settings-table design: label left, value right) ----
+    const row = (label, value, color) => R("div", { key: label, style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "13px 16px", borderBottom: "1px solid rgba(28,28,30,0.12)" } },
+      R("span", { style: { fontSize: 13.5, color: "var(--fg)" } }, label),
+      R("span", { style: { fontSize: 13.5, color: color || "var(--fg-subtle)", textAlign: "right" } }, value));
+    const selectRow = (label, value) => R("div", { key: label, style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "13px 16px", borderBottom: "1px solid rgba(28,28,30,0.12)" } },
+      R("span", { style: { fontSize: 13.5, color: "var(--fg)" } }, label),
+      R("span", { style: { display: "flex", alignItems: "center", gap: 6, fontSize: 13.5, color: "var(--fg-subtle)" } }, value, this.ic("chevron", 13, "var(--fg-subtle)", 2)));
+    const nameRow = (caption, value) => R("div", { key: "name", style: { padding: "12px 16px 14px", borderBottom: "1px solid rgba(28,28,30,0.12)" } },
+      R("div", { style: { fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--fg-subtle)", opacity: 0.7, marginBottom: 6 } }, caption),
+      R("div", { style: { fontSize: 15, color: "var(--fg-strong)" } }, value));
+    const buttonRow = (label, btn) => R("div", { key: label, style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 16px", borderBottom: "1px solid rgba(28,28,30,0.12)" } },
+      R("span", { style: { fontSize: 13.5, color: "var(--fg)" } }, label), btn);
+    const sectionLabel = (t) => R("div", { key: "sl-" + t, style: { fontSize: 12, fontWeight: 500, textTransform: "uppercase", letterSpacing: "-0.02em", color: "var(--fg-subtle)", margin: "18px 0 8px", padding: "0 2px" } }, t);
+    const table = (rows, key) => R("div", { key: key, style: { background: "#fff", borderRadius: 16, boxShadow: "var(--shadow-xs)", overflow: "hidden" } }, rows);
 
-    const inputSettingsBody = [
-      R("div", { key: "connected", style: { fontSize: 11, fontWeight: 600, color: "var(--fg-muted)", background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", padding: "6px 10px", marginBottom: 4 } }, connectedLabel.toUpperCase()),
-      sectionLabel("About"),
-      nameRow,
-      row("Sink Detected", hasSig ? "Yes" : "Unknown", hasSig ? "var(--success)" : "var(--crestron-gold)"),
-      row("Resolution", "0000x0000px @ 00Hz"),
-      row("Source HDCP", hasSig ? "Active" : "Inactive", hasSig ? "var(--success)" : "var(--danger)"),
-      row("HDCP State", "Not Required"),
-      row("Horizontal Resolution", "0000"),
-      row("Vertical Resolution", "0000"),
-      row("Frames Per Second", "000"),
-      row("Aspect Ratio", "No Signal"),
-      row("Audio Format", "No Audio"),
-      row("Audio Channels", "0"),
-      sectionLabel("Settings"),
-      selectRow("HDCP Receiver Capability", "Auto"),
-      selectRow("EDID", "1080p, 60Hz - 2CH"),
-      selectRow("Color Depth", "8-bit"),
-    ];
-    const placeholderBody = (label) => R("div", { style: { padding: "40px 0", textAlign: "center", color: "var(--fg-subtle)", fontSize: 12.5, fontStyle: "italic" } }, label + " — coming soon");
+    let body = null;
+    if (m.section === "input-settings" || m.section === "output-settings") {
+      const isOut = side === "output";
+      const rows = [
+        nameRow(isOut ? "Output Name" : "Name", port.label),
+        row(isOut ? "Sink Connected" : "Sink Detected", hasSig ? "Yes" : "Unknown", hasSig ? "var(--success)" : "var(--crestron-gold)"),
+      ];
+      if (isOut) {
+        rows.push(row("Manufacturer", otherDev ? otherDev.manufacturer : "None"));
+        rows.push(row("Name", otherDev ? otherDev.name : "None"));
+        rows.push(buttonRow("Save CEDID", R("button", { className: "cp-btn", style: { display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, border: "none", background: "var(--bg-muted)", fontSize: 13, color: "var(--fg)", cursor: "pointer" } }, "Save")));
+        rows.push(row("Resolution", "0000x0000px @ 000Hz"));
+        rows.push(row("Transmitting", hasSig ? "Yes" : "Unknown", hasSig ? "var(--success)" : "var(--crestron-gold)"));
+      } else {
+        rows.push(row("Resolution", "0000x0000px @ 000Hz"));
+        rows.push(row("Source HDCP", hasSig ? "Active" : "Inactive", hasSig ? "var(--success)" : "var(--danger)"));
+      }
+      rows.push(row("HDCP State", "Not Required"));
+      rows.push(row("Horizontal Resolution", "0000"));
+      rows.push(row("Vertical Resolution", "0000"));
+      rows.push(row("Frames Per Second", "000"));
+      rows.push(row("Aspect Ratio", "No Signal"));
+      rows.push(row("Audio Format", "No Audio"));
+      rows.push(row("Audio Channels", "0"));
+      body = [
+        R("div", { key: "banner", style: { fontSize: 12.5, fontWeight: 600, color: "var(--fg-muted)", padding: "2px 2px 6px" } }, banner),
+        sectionLabel("About"),
+        table(rows, "about"),
+        !isOut ? sectionLabel("Settings") : null,
+        !isOut ? table([
+          selectRow("HDCP Receiver Capability", "Auto"),
+          selectRow("EDID", "1080p, 60Hz - 2CH"),
+          selectRow("Color Depth", "8-bit"),
+        ], "settings") : null,
+      ];
+    } else if (m.section === "input-audio") {
+      const val = this.getLevel(dev.id, "input", port.id, 0);
+      body = R("div", { style: { display: "flex", gap: 10, padding: 10, background: "#E7E7EE", border: "1px solid var(--border)", borderRadius: 16 } },
+        this.ChannelStrip({ key: port.id, caption: (this.SIGNAL_LABELS[port.signal] || "") + " Source", name: port.label, value: val, min: -10, max: 10, step: 1,
+          ticks: ["+10", "0", "-10"], meter: ((val + 10) / 20) * 100, onChange: v => this.setLevel(dev.id, "input", port.id, v) }),
+        R("div", { style: { flex: 1, minHeight: 380, border: "1px solid var(--border)", borderRadius: 12, background: "var(--bg-muted)", display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 13, color: "var(--fg-subtle)", backgroundImage: "linear-gradient(to bottom right, transparent calc(50% - 0.5px), var(--neutral-300) 50%, transparent calc(50% + 0.5px)), linear-gradient(to bottom left, transparent calc(50% - 0.5px), var(--neutral-300) 50%, transparent calc(50% + 0.5px))" } },
+          R("span", { style: { background: "var(--bg-muted)", padding: "8px 16px" } }, "Reserved For Additional Audio Controls")));
+    } else {
+      // Output Audio — output preset + mix-source select, then the mix strips feeding this output.
+      const mix = this.getMixSelect(dev.id);
+      const sources = (dev.inputs || []).slice(0, 5);
+      const outVal = this.getLevel(dev.id, "output", port.id, -30);
+      const radio = (label) => R("button", { key: label, className: "cp-btn", onClick: () => this.setMixSelect(dev.id, label),
+        style: { display: "flex", alignItems: "center", gap: 8, border: "none", background: "none", cursor: "pointer", fontSize: 13.5, color: mix === label ? "var(--fg-strong)" : "var(--fg-subtle)" } },
+        R("div", { style: { width: 18, height: 18, borderRadius: "50%", boxSizing: "border-box", border: "2px solid " + (mix === label ? "#02AADB" : "var(--neutral-400)"), display: "flex", alignItems: "center", justifyContent: "center" } },
+          mix === label ? R("div", { style: { width: 9, height: 9, borderRadius: "50%", background: "#02AADB" } }) : null),
+        label);
+      body = [
+        sectionLabel("Output Settings"),
+        table([
+          R("div", { key: "preset", style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderBottom: "1px solid rgba(28,28,30,0.12)" } },
+            R("span", { style: { fontSize: 13.5, color: "var(--fg)" } }, "Output Preset"),
+            R("div", { style: { display: "flex", alignItems: "center", gap: 10 } },
+              R("span", { style: { display: "flex", alignItems: "center", gap: 5, fontSize: 13.5, color: "var(--fg-subtle)" } }, "Default", this.ic("chevron", 13, "var(--fg-subtle)", 2)),
+              R("button", { className: "cp-btn", style: { padding: "6px 14px", borderRadius: 8, border: "none", background: "var(--neutral-200)", color: "var(--fg-subtle)", fontSize: 13, cursor: "default" } }, "Save"))),
+          R("div", { key: "mixsel", style: { display: "flex", alignItems: "center", gap: 18, padding: "12px 16px", flexWrap: "wrap" } },
+            R("span", { style: { fontSize: 13.5, color: "var(--fg)" } }, "Mix Select"),
+            ["USB", "Analog", "HDMI/NVX", "AES67-1", "AES67-2", "AES67-3"].map(radio)),
+        ], "outset"),
+        sectionLabel("[[" + mix + "]] Mix \u00b7 " + port.label),
+        R("div", { key: "mixrack", style: { display: "flex", gap: 8, padding: 10, background: "#ECECF3", border: "1px solid var(--border)", borderRadius: 16, overflowX: "auto" } },
+          sources.map((s, i) => {
+            const v = this.getLevel(dev.id, "mix:" + port.id, s.id, [-120, -90, -60, -30, 0][i] ?? -60);
+            return this.ChannelStrip({ key: s.id, caption: "Output Name", name: s.label, value: v, min: -120, max: 0, step: 5,
+              ticks: ["0", "-30", "-60", "-90", "-120"], meter: ((v + 120) / 120) * 100, speaker: true,
+              onChange: nv => this.setLevel(dev.id, "mix:" + port.id, s.id, Math.max(-120, Math.min(0, nv))) });
+          }),
+          this.ChannelStrip({ key: "master", caption: "Master", name: port.label, value: outVal, min: -120, max: 0, step: 5, master: true, speaker: true,
+            ticks: ["0", "-30", "-60", "-90", "-120"], meter: ((outVal + 120) / 120) * 100, onChange: v => this.setLevel(dev.id, "output", port.id, v) })),
+      ];
+    }
 
     return R("div", { onClick: () => this.closeSettingsModal(),
       style: { position: "fixed", inset: 0, zIndex: 200, background: "rgba(15,23,32,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 28 } },
       R("div", { onClick: e => e.stopPropagation(),
-        style: { width: "100%", maxWidth: 900, height: "100%", maxHeight: 620, background: "#fff", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-lg)", display: "flex", overflow: "hidden" } },
+        style: { width: "100%", maxWidth: 1300, height: "100%", maxHeight: 900, background: "var(--bg-muted)", border: "1px solid var(--border)", borderRadius: 24, boxShadow: "0px 12px 48px -12px rgba(0,0,0,0.18)", display: "flex", overflow: "hidden" } },
         // Sidebar
-        R("div", { style: { width: 210, flexShrink: 0, background: "var(--bg-subtle)", borderRight: "1px solid var(--border)", display: "flex", flexDirection: "column", padding: "18px 14px" } },
-          R("div", { style: { fontSize: 17, fontWeight: 700, color: "var(--fg-strong)", fontFamily: "var(--font-display)", marginBottom: 14 } }, "Settings"),
-          R("div", { style: { display: "flex", alignItems: "center", gap: 7, padding: "7px 9px", background: "#fff", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", marginBottom: 16 } },
-            this.ic("search", 13, "var(--fg-subtle)"),
-            R("input", { readOnly: true, placeholder: "Search", style: { border: "none", background: "none", outline: "none", fontSize: 12, width: "100%", color: "var(--fg)", fontFamily: "var(--font-body)" } })),
-          R("div", { style: { fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--fg-subtle)", padding: "0 9px 6px" } }, "General"),
-          NAV.map(n => {
-            const active = m.section === n.id;
-            return R("button", { key: n.id, onClick: () => this.setSettingsSel({ section: n.id }), className: "cp-btn",
-              style: { display: "flex", alignItems: "center", gap: 9, width: "100%", textAlign: "left", padding: "8px 9px", border: "none", borderRadius: "var(--radius-sm)", cursor: "pointer",
-                background: active ? "var(--blue-50)" : "transparent", color: active ? "var(--crestron-true-blue)" : "var(--fg)", fontSize: 12.5, fontWeight: active ? 700 : 500, marginBottom: 2 } },
-              this.ic(n.icon, 14, active ? "var(--crestron-true-blue)" : "var(--fg-muted)"), n.label);
-          })),
-        // Body
-        R("div", { style: { flex: 1, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden" } },
-          R("div", { style: { display: "flex", alignItems: "center", padding: "18px 24px 0", flexShrink: 0 } },
-            R("div", { style: { fontSize: 20, fontWeight: 700, color: "var(--fg-strong)", fontFamily: "var(--font-display)", flex: 1 } }, NAV.find(n => n.id === m.section)?.label.replace(" Settings", "").replace(" Audio", " Audio") || "Settings"),
-            R("button", { onClick: () => this.closeSettingsModal(), className: "cp-btn", style: { background: "none", border: "none", cursor: "pointer", display: "flex", padding: 4, color: "var(--fg-muted)" } }, this.ic("x", 18))),
-          m.section === "input-settings" ? R("div", { style: { display: "flex", gap: 6, padding: "16px 24px 0", flexShrink: 0, flexWrap: "wrap" } },
-            inputs.map((p, i) => R("button", { key: p.id, onClick: () => this.setSettingsSel({ inputIdx: i }), className: "cp-btn",
-              style: { padding: "5px 12px", borderRadius: "var(--radius-pill)", border: `1px solid ${i === idx ? "var(--crestron-true-blue)" : "var(--border)"}`, background: i === idx ? "var(--blue-50)" : "#fff",
-                color: i === idx ? "var(--crestron-true-blue)" : "var(--fg-muted)", fontSize: 11.5, fontWeight: i === idx ? 700 : 500, cursor: "pointer" } }, "Input " + (i + 1)))) : null,
-          R("div", { style: { flex: 1, overflowY: "auto", padding: "10px 24px 20px" } },
-            m.section === "input-settings" ? inputSettingsBody : placeholderBody(NAV.find(n => n.id === m.section)?.label || "")),
+        R("div", { style: { width: 300, flexShrink: 0, padding: "22px 24px", display: "flex", flexDirection: "column", gap: 16 } },
+          R("div", { style: { fontSize: 26, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--fg-strong)", fontFamily: "var(--font-display)" } }, "Settings"),
+          R("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "#fff", border: "1px solid var(--border)", borderRadius: 4 } },
+            this.ic("search", 15, "var(--fg)"),
+            R("input", { readOnly: true, placeholder: "Search", style: { border: "none", background: "none", outline: "none", fontSize: 14, width: "100%", color: "var(--fg)", fontFamily: "var(--font-body)" } })),
+          R("div", { style: { fontSize: 12, fontWeight: 500, letterSpacing: "-0.02em", textTransform: "uppercase", color: "var(--fg-subtle)", padding: "10px 12px 4px" } }, "General"),
+          R("div", { style: { background: "#fff", borderRadius: 16, boxShadow: "var(--shadow-xs)", overflow: "hidden" } },
+            this.SETTINGS_NAV.map((n, i) => {
+              const active = m.section === n.id;
+              return R("button", { key: n.id, className: "cp-btn", onClick: () => this.setSettingsSel({ section: n.id }),
+                style: { display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", padding: "13px 16px", border: "none", cursor: "pointer", background: "#fff",
+                  borderLeft: "3px solid " + (active ? "#02AADB" : "transparent"), borderBottom: i < this.SETTINGS_NAV.length - 1 ? "1px solid rgba(28,28,30,0.18)" : "none",
+                  color: active ? "#007CA0" : "var(--fg)", fontSize: 14.5, fontWeight: active ? 700 : 400 } },
+                this.ic(n.icon, 18, active ? "#007CA0" : "var(--fg)"), n.label);
+            }))),
+        // Content
+        R("div", { style: { flex: 1, minWidth: 0, display: "flex", flexDirection: "column", borderLeft: "1px solid var(--border)", overflow: "hidden" } },
+          R("div", { style: { display: "flex", alignItems: "flex-start", padding: "20px 24px 0", flexShrink: 0 } },
+            R("div", { style: { flex: 1, fontSize: 26, fontWeight: 700, color: "#000", fontFamily: "var(--font-display)" } }, nav.title),
+            R("button", { onClick: () => this.closeSettingsModal(), className: "cp-btn", title: "Close",
+              style: { background: "none", border: "none", cursor: "pointer", display: "flex", padding: 4, color: "#000" } }, this.ic("x", 24))),
+          // Port chips — the selected chip is the port the rest of the screen describes.
+          R("div", { style: { display: "flex", gap: 10, flexWrap: "wrap", padding: "14px 24px 0", flexShrink: 0 } },
+            (ports.length ? ports : [port]).map((p, i) => R("button", { key: p.id, className: "cp-btn", onClick: () => this.setSettingsSel({ [idxKey]: i }),
+              style: { padding: "7px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 14, whiteSpace: "nowrap",
+                background: i === idx ? "#fff" : "var(--bg-muted)", boxShadow: i === idx ? "var(--shadow-md)" : "none",
+                color: i === idx ? "#007CA0" : "var(--fg)", fontWeight: i === idx ? 700 : 400 } }, chipWord + (i + 1)))),
+          R("div", { style: { flex: 1, overflowY: "auto", padding: "10px 24px 24px" } }, body),
         ),
       ));
   }
