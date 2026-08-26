@@ -162,8 +162,8 @@ class Component extends DCLogic {
     "eq-nax-8zsa": { serial: "L129335443", firmware: "3.002.0085.20436", typeLabel: "Audio Switcher", hostname: "DM-NAX-8ZSA-00107FB58093", ip: "10.88.109.78", mac: "00:10:7F:B5:80:93", ipId: "54", multicast: "239.8.0.1", versiports: 4 },
   };
 
-  SIGNAL_COLORS = { hdmi: "#003B71", analog_audio: "#CF9F02", toslink: "#007CA0", spdif: "#E0662F", rca: "#8E5AB8", usb: "#0D441D", aoip: "#43C5E3", aes67: "#6F7DE0", avoip: "#A79F88", bluetooth: "#1AA3C6" };
-  SIGNAL_LABELS = { hdmi: "HDMI", analog_audio: "Analog", toslink: "Toslink", spdif: "S/PDIF", rca: "RCA", usb: "USB", aoip: "AoIP", avoip: "AVoIP", bluetooth: "BT" };
+  SIGNAL_COLORS = { hdmi: "#003B71", analog_audio: "#CF9F02", digital_audio: "#007CA0", toslink: "#007CA0", spdif: "#E0662F", rca: "#8E5AB8", usb: "#0D441D", aoip: "#43C5E3", aes67: "#6F7DE0", avoip: "#A79F88", bluetooth: "#1AA3C6" };
+  SIGNAL_LABELS = { hdmi: "HDMI", analog_audio: "Analog", digital_audio: "Digital", toslink: "Toslink", spdif: "S/PDIF", rca: "RCA", usb: "USB", aoip: "AoIP", aes67: "AES67", avoip: "AVoIP", bluetooth: "BT" };
 
   // ============ INTERNAL DSP MODEL (read-only chain map — C-14 / C-17) ============
   // Sourced from devices/8ZSA DSP.csv. The device's DSP is not one flat chain: input-side blocks
@@ -201,10 +201,36 @@ class Component extends DCLogic {
 
   CARD_W = 240; PORT_H = 26; HEADER_H = 52; CARD_PAD = 8; DSP_FOOTER_H = 58; DSP_HINT_H = 30; NAX_WIDGET_H = 34; STORAGE_KEY = "configurePro.v1"; GRID = 24;
 
+  // ============ PHASE VIEW (NOW / NEXT / LATER demo toggle) ============
+  // Lets the MVP prototype be demoed as the literal Phase A (NOW) deliverable without deleting
+  // work that has crept in from later phases. NOW shows only Phase A. NEXT additionally reveals
+  // Phase B affordances (cumulative). LATER reveals everything, including Phase C/D and the
+  // features that were never written into the story map at all. See
+  // compare-the-mvp-prototype-cached-hickey.md for the feature -> phase mapping this encodes.
+  PHASE_RANK = { now: 1, next: 2, later: 3 };
+  phaseAtLeast(min) { return this.PHASE_RANK[this.state.phase] >= this.PHASE_RANK[min]; }
+  setPhase(phase) { this.setState({ phase }); this.track("canvasInteractions", "Phase view \u2192 " + phase); }
+  // Passive speakers (C-20) are the only DEVICES entries gated by phase; everything else on
+  // this list is Phase A and always present.
+  deviceListForPhase() { return this.phaseAtLeast("later") ? this.DEVICES : this.DEVICES.filter(d => d.type !== "Speaker"); }
+  PhaseToggle() {
+    const R = React.createElement;
+    const s = this.state;
+    const opts = [["now", "Now (MVP)"], ["next", "Next"], ["later", "Later"]];
+    return R("div", { style: { display: "flex", flexDirection: "column", gap: 4, padding: "8px 16px", borderTop: "1px solid var(--border)" } },
+      R("span", { style: { fontSize: 9.5, fontWeight: 700, color: "var(--fg-subtle)", textTransform: "uppercase", letterSpacing: "0.08em" } }, "Phase view"),
+      R("div", { style: { display: "flex", borderRadius: "var(--radius-md)", overflow: "hidden", border: "1px solid var(--border)" } },
+        opts.map(([id, label]) => R("button", { key: id, onClick: () => this.setPhase(id), className: "cp-btn", title: "Show " + label + " affordances",
+          style: { flex: 1, padding: "5px 0", fontSize: 10, fontWeight: 700, border: "none", cursor: "pointer",
+            background: s.phase === id ? "var(--crestron-true-blue)" : "#fff", color: s.phase === id ? "#fff" : "var(--fg-muted)" } }, label))),
+    );
+  }
+
   // ============ STATE ============
   state = {
     screen: "main",
     tab: "routing",
+    phase: "now",
     sel: { id: "whole-system", type: "system", name: "Whole System" },
     expanded: { "1st-floor": true },
     expandedRooms: {},
@@ -371,15 +397,21 @@ class Component extends DCLogic {
     this.ROOMS_TREE.forEach(n => { if (n.type === "room") rooms.push({ id: n.id, name: n.name }); if (n.children) n.children.forEach(c => rooms.push({ id: c.id, name: c.name })); });
     return rooms;
   }
-  devicesInRoom(roomId) { return this.DEVICES.filter(d => d.room === roomId); }
+  devicesInRoom(roomId) { return this.deviceListForPhase().filter(d => d.room === roomId); }
   devicesInFloor(floorId) { const f = this.ROOMS_TREE.find(n => n.id === floorId); if (!f?.children) return []; return f.children.flatMap(c => this.devicesInRoom(c.id)); }
   deviceById(id) { return this.DEVICES.find(d => d.id === id); }
   // Bluetooth ports are shown on devices for completeness but are not routeable —
   // they render greyed-out and never expose valid connection options.
-  // Non-routeable signal types are listed explicitly; everything else (hdmi, analog_audio,
-  // digital_audio, spdif, rca, …) is routeable and can be connected on the canvas and in the Matrix.
-  NON_ROUTEABLE = ["bluetooth", "aoip", "avoip"];
-  isRouteable(signal) { return !this.NON_ROUTEABLE.includes(signal); }
+  // Hand-routing AoIP/AVoIP ports on canvas/Matrix is deferred beyond Phase B (see A-07 Out of
+  // Scope) and is only anticipated, in a narrower "fixed routes on capable hardware" form, by
+  // C-40 (LATER / Phase C). Gate it behind the LATER phase view rather than deleting it.
+  NON_ROUTEABLE_ALWAYS = ["bluetooth"];
+  NON_ROUTEABLE_UNTIL_LATER = ["aoip", "avoip"];
+  isRouteable(signal) {
+    if (this.NON_ROUTEABLE_ALWAYS.includes(signal)) return false;
+    if (this.NON_ROUTEABLE_UNTIL_LATER.includes(signal)) return this.phaseAtLeast("later");
+    return true;
+  }
   signalsCompatible(a, b) { return !!a && !!b && a === b && this.isRouteable(a); }
 
   // ============ SIGNAL-TYPE FILTER (B-34) ============
@@ -405,6 +437,8 @@ class Component extends DCLogic {
   // shown greyed-out since it is not routeable.
   SignalLegend(extraStyle) {
     const R = React.createElement;
+    // Interactive signal-type filter — B-34 — NEXT.
+    if (!this.phaseAtLeast("next")) return null;
     const legendKeys = Object.keys(this.SIGNAL_LABELS).filter(k => this.DEVICES.some(d => [...d.inputs, ...d.outputs].some(p => p.signal === k)));
     const anyHidden = legendKeys.some(k => !this.signalVisible(k));
     // Single flat row — never wraps; if the system has more signal types than fit, the key
@@ -720,7 +754,10 @@ class Component extends DCLogic {
         }),
       ),
       R("div", null,
-        R("button", { onClick: () => this.setState({ telemetryOpen: true }), className: "cp-btn", style: { display: "flex", alignItems: "center", gap: 9, width: "100%", padding: "10px 16px", borderTop: "1px solid var(--border)", background: "none", border: "none", borderTopWidth: 1, borderTopStyle: "solid", borderTopColor: "var(--border)", cursor: "pointer", color: "var(--crestron-mid-blue)", fontSize: 12.5 } }, this.ic("activity", 16, "var(--crestron-mid-blue)"), "Telemetry"),
+        this.PhaseToggle(),
+        // Telemetry surfaces the A-27/28/29/31/33 (and B-30) instrumentation stories — visible
+        // at every phase since the underlying telemetry stories span NOW, NEXT, and LATER.
+        R("button", { onClick: () => this.setState({ telemetryOpen: true }), className: "cp-btn", style: { display: "flex", alignItems: "center", gap: 9, width: "100%", padding: "10px 16px", background: "none", border: "none", borderTop: "1px solid var(--border)", cursor: "pointer", color: "var(--crestron-mid-blue)", fontSize: 12.5 } }, this.ic("activity", 16, "var(--crestron-mid-blue)"), "Telemetry"),
         R("button", { className: "cp-btn", style: { display: "flex", alignItems: "center", gap: 9, width: "100%", padding: "10px 16px", background: "none", border: "none", cursor: "pointer", color: "var(--fg-muted)", fontSize: 12.5 } }, this.ic("settings", 16, "var(--fg-muted)"), "Settings"),
       ),
     );
@@ -935,7 +972,7 @@ class Component extends DCLogic {
     const s = this.state;
     if (s.sel.type === "floor") return this.devicesInFloor(s.sel.id);
     if (s.sel.type === "room") return this.devicesInRoom(s.sel.id);
-    return this.DEVICES;
+    return this.deviceListForPhase();
   }
 
   // ============ CANVAS PAN / ZOOM / DRAG ============
@@ -964,7 +1001,7 @@ class Component extends DCLogic {
     if (this._lastZoomSel === s.sel.id || !this.containerEl) return;
     this._lastZoomSel = s.sel.id;
     const rect = this.containerEl.getBoundingClientRect();
-    const devs = s.sel.type === "system" ? this.DEVICES : s.sel.type === "floor" ? this.devicesInFloor(s.sel.id) : s.sel.type === "room" ? this.devicesInRoom(s.sel.id) : this.DEVICES;
+    const devs = s.sel.type === "system" ? this.deviceListForPhase() : s.sel.type === "floor" ? this.devicesInFloor(s.sel.id) : s.sel.type === "room" ? this.devicesInRoom(s.sel.id) : this.deviceListForPhase();
     if (!devs.length) return;
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     devs.forEach(d => { const p = this.state.positions[d.id] || { x: 0, y: 0 }; const h = this.cardHeight(d); minX = Math.min(minX, p.x); minY = Math.min(minY, p.y); maxX = Math.max(maxX, p.x + this.CARD_W); maxY = Math.max(maxY, p.y + h); });
@@ -1045,7 +1082,9 @@ class Component extends DCLogic {
     const R = React.createElement;
     const s = this.state;
     if (s.tab === "routing") {
-      if (s.sel.type === "device") return this.DeviceRoutingPanel(this.deviceById(s.sel.id));
+      // Third routing surface (#14, unscoped) — only demo it under LATER; NOW/NEXT fall through
+      // to the two Phase-A/B surfaces (canvas + matrix) even if a device row is selected.
+      if (s.sel.type === "device" && this.phaseAtLeast("later")) return this.DeviceRoutingPanel(this.deviceById(s.sel.id));
       return s.routingView === "canvas" ? this.RoutingCanvas() : this.RoutingGrid();
     }
     if (s.tab === "devices" && s.sel.type === "device") return this.DeviceDetailPanel(this.deviceById(s.sel.id));
@@ -1080,7 +1119,7 @@ class Component extends DCLogic {
       // Canvas content (transformed)
       R("div", { style: { transform: `translate(${vp.x}px, ${vp.y}px) scale(${vp.z})`, transformOrigin: "0 0", position: "absolute", top: 0, left: 0 } },
         this.WiresSvg(),
-        this.visibleDevicesFor && this.DEVICES.map(dev => this.DeviceCard(dev, visibleIds)),
+        this.visibleDevicesFor && this.deviceListForPhase().map(dev => this.DeviceCard(dev, visibleIds)),
       ),
     );
   }
@@ -1204,8 +1243,8 @@ class Component extends DCLogic {
     const isSelected = s.selectedDev === dev.id;
     // Inline gain/mute footer: available on DSP-capable devices, but NOT on plain DSP-type nodes,
     // and NOT on devices with a modeled internal DSP chain (those get the pointer footer instead).
-    const showDsp = isSelected && this.isDspCapable(dev) && dev.type !== "DSP" && !this.hasInternalDsp(dev);
-    const showDspHint = isSelected && this.hasInternalDsp(dev);
+    const showDsp = isSelected && this.isDspCapable(dev) && dev.type !== "DSP" && !this.hasInternalDsp(dev) && this.phaseAtLeast("next");
+    const showDspHint = isSelected && this.hasInternalDsp(dev) && this.phaseAtLeast("later");
     const h = this.cardHeight(dev, isSelected);
     const hasPorts = dev.inputs.length > 0 || dev.outputs.length > 0;
     const dim = !visibleIds.has(dev.id);
@@ -1227,7 +1266,7 @@ class Component extends DCLogic {
         boxShadow: tracedDev ? "0 0 0 3px rgba(67,197,227,0.18), var(--shadow-md)" : "var(--shadow-sm)", cursor: "grab", userSelect: "none", opacity: finalOpacity, zIndex: isSelected ? 20 : tracedDev ? 15 : 10, transition: "opacity 0.25s, box-shadow 0.25s, border-color 0.2s" },
       onPointerDown: e => this.startDeviceDrag(dev.id, e),
       onClick: e => { if (this._dragMoved) { this._dragMoved = false; return; } if (!this._drag) { e.stopPropagation(); if (this.state.tracedChain) { this.clearTrace(); } else { this.traceFromDevice(dev.id); this.setState({ selectedDev: dev.id }); this.track("canvasInteractions", "Select " + dev.name); } } },
-      onDoubleClick: () => { if (this.hasInternalDsp(dev)) this.openDspModal(dev.id); else this.setSel({ id: dev.id, type: "device", name: dev.name, device: dev }); } },
+      onDoubleClick: () => { if (this.hasInternalDsp(dev) && this.phaseAtLeast("later")) this.openDspModal(dev.id); else this.setSel({ id: dev.id, type: "device", name: dev.name, device: dev }); } },
       // Header (prototype layout: bare device glyph, name + model, tools column)
       R("div", { style: { display: "flex", alignItems: "center", gap: 9, padding: "0 6px 0 9px", background: isOOO ? "#FBE3E1" : "var(--bg-subtle)", borderRadius: "var(--radius-lg) var(--radius-lg) 0 0", borderBottom: `1px solid ${isOOO ? "#F2C4C0" : "var(--border)"}`, height: this.HEADER_H, boxSizing: "border-box" } },
         R("div", { style: { width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: isOOO ? "var(--danger)" : "var(--dg5, #636366)" } }, this.protoDeviceIcon(dev, 18, isOOO ? "var(--danger)" : "var(--dg5, #636366)")),
@@ -1237,33 +1276,34 @@ class Component extends DCLogic {
         R("div", { style: { display: "flex", alignItems: "center", gap: 4 } },
           isLive ? R("div", { style: { width: 5, height: 5, borderRadius: "50%", background: "var(--crestron-sky)", animation: "cpPulse 2s infinite" } }) : null,
           R("div", { style: { width: 7, height: 7, borderRadius: "50%", background: isOOO ? "var(--danger)" : dev.status === "Online" ? "var(--success)" : "var(--danger)" } }),
-          // Hide (eye-off): commits the red-X port selection to hidden.
-          this.hasPortSel(dev.id) ? R("button", { onClick: e => { e.stopPropagation(); e.preventDefault(); this.commitHidePorts(dev.id); }, onDoubleClick: e => e.stopPropagation(), onPointerDown: e => e.stopPropagation(), className: "cp-btn", title: "Hide selected ports",
+          // Hide (eye-off): commits the red-X port selection to hidden. B-09 — NEXT.
+          this.phaseAtLeast("next") && this.hasPortSel(dev.id) ? R("button", { onClick: e => { e.stopPropagation(); e.preventDefault(); this.commitHidePorts(dev.id); }, onDoubleClick: e => e.stopPropagation(), onPointerDown: e => e.stopPropagation(), className: "cp-btn", title: "Hide selected ports",
             style: { width: 20, height: 20, borderRadius: "var(--radius-sm)", border: "1px solid var(--danger)", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, flexShrink: 0 } },
             this.ic("eye-off", 12, "var(--danger)"))
           // Unhide (eye): brings hidden ports back as a red-X selection so they can be re-hidden or unselected.
-          : this.hasHiddenPorts(dev.id) ? R("button", { onClick: e => { e.stopPropagation(); e.preventDefault(); this.unhideToSelection(dev.id); }, onDoubleClick: e => e.stopPropagation(), onPointerDown: e => e.stopPropagation(), className: "cp-btn", title: "Show hidden ports",
+          : this.phaseAtLeast("next") && this.hasHiddenPorts(dev.id) ? R("button", { onClick: e => { e.stopPropagation(); e.preventDefault(); this.unhideToSelection(dev.id); }, onDoubleClick: e => e.stopPropagation(), onPointerDown: e => e.stopPropagation(), className: "cp-btn", title: "Show hidden ports",
             style: { width: 20, height: 20, borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, flexShrink: 0 } },
             this.ic("eye", 12, "var(--fg-subtle)")) : null,
           // Internal DSP view: devices with a modeled internal matrix/DSP chain expose a
-          // read-only signal-flow modal (also reachable by double-clicking the node).
-          this.hasInternalDsp(dev) ? R("button", { onClick: e => { e.stopPropagation(); e.preventDefault(); this.openDspModal(dev.id); }, onDoubleClick: e => e.stopPropagation(), onPointerDown: e => e.stopPropagation(), className: "cp-btn", title: "View internal DSP signal flow",
+          // read-only signal-flow modal (also reachable by double-clicking the node). C-14 — LATER.
+          this.hasInternalDsp(dev) && this.phaseAtLeast("later") ? R("button", { onClick: e => { e.stopPropagation(); e.preventDefault(); this.openDspModal(dev.id); }, onDoubleClick: e => e.stopPropagation(), onPointerDown: e => e.stopPropagation(), className: "cp-btn", title: "View internal DSP signal flow",
             style: { width: 20, height: 20, borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, flexShrink: 0 } },
             this.ic("dsp", 12, "var(--crestron-mid-blue)")) : null,
-          // Collapse toggle: hide unconnected ports / show all (prototype expand button)
-          R("button", { onClick: e => { e.stopPropagation(); e.preventDefault(); this.toggleCollapse(dev.id); }, onDoubleClick: e => e.stopPropagation(), onPointerDown: e => e.stopPropagation(), className: "cp-btn", title: this.isCollapsed(dev.id) ? "Show all ports" : "Show only connected ports",
+          // Collapse toggle: hide unconnected ports / show all (prototype expand button). #11, adjacent to B-09/B-36 — NEXT.
+          this.phaseAtLeast("next") ? R("button", { onClick: e => { e.stopPropagation(); e.preventDefault(); this.toggleCollapse(dev.id); }, onDoubleClick: e => e.stopPropagation(), onPointerDown: e => e.stopPropagation(), className: "cp-btn", title: this.isCollapsed(dev.id) ? "Show all ports" : "Show only connected ports",
             style: { width: 20, height: 20, borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: this.isCollapsed(dev.id) ? "var(--blue-50)" : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, flexShrink: 0, transform: this.isCollapsed(dev.id) ? "rotate(180deg)" : "none", transition: "transform var(--dur-fast)" } },
-            this.ic("chevron", 11, this.isCollapsed(dev.id) ? "var(--crestron-true-blue)" : "var(--fg-subtle)"))),
+            this.ic("chevron", 11, this.isCollapsed(dev.id) ? "var(--crestron-true-blue)" : "var(--fg-subtle)")) : null),
       ),
-      // Crestron device settings gear (top-right corner of the card)
-      dev.manufacturer === "Crestron" ? R("button", { key: "gear", onClick: e => { e.stopPropagation(); e.preventDefault(); this.openSettingsModal(dev.id); }, onDoubleClick: e => e.stopPropagation(), onPointerDown: e => e.stopPropagation(), className: "cp-btn", title: "Device settings",
+      // Crestron device settings gear (top-right corner of the card). Opens the Input/Output
+      // Settings + Audio modal — C-17/C-18 — LATER.
+      dev.manufacturer === "Crestron" && this.phaseAtLeast("later") ? R("button", { key: "gear", onClick: e => { e.stopPropagation(); e.preventDefault(); this.openSettingsModal(dev.id); }, onDoubleClick: e => e.stopPropagation(), onPointerDown: e => e.stopPropagation(), className: "cp-btn", title: "Device settings",
         style: { position: "absolute", top: -10, right: -10, width: 24, height: 24, borderRadius: "50%", border: "1px solid var(--border)", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, boxShadow: "var(--shadow-xs)", zIndex: 25 } },
         this.gearIcon(16)) : null,
       // A-12 NAX status widget band
       dev.nax ? this.NaxWidget(dev, isOOO, dsp, sigStatus) : null,
       // Ports
       hasPorts ? this.PortsLayer(dev) : null,
-      // A-16 DSP footer
+      // A-16 / B-16 DSP footer
       showDsp ? this.DspFooter(dev, dsp, isMuted) : null,
       showDspHint ? this.DspHintFooter(dev) : null,
     );
@@ -1343,19 +1383,22 @@ class Component extends DCLogic {
           marginLeft: isIn ? -5 : 0, marginRight: isIn ? 0 : -5,
           boxShadow: compatible ? `0 0 0 2px ${col}, 0 0 8px ${col}` : "none",
           animation: hasSig && !dragging && routeable ? "cpRing 2.4s infinite" : "none" } });
-      // Label zone = the hide-marking control. Hover tint and the marked state both live here.
+      // Label zone = the hide-marking control (B-09 — NEXT). Hover tint and the marked state
+      // both live here; below NEXT the label is inert (no hide affordance to commit with).
+      const canHide = this.phaseAtLeast("next");
       const label = R("div", { key: "label",
-        title: sel ? "Marked to hide \u2014 click to unmark" : "Click to mark this port for hiding",
+        title: !canHide ? undefined : sel ? "Marked to hide \u2014 click to unmark" : "Click to mark this port for hiding",
         onPointerDown: e => e.stopPropagation(),
-        onClick: e => { e.stopPropagation(); this.togglePortSel(dev.id, side, p.id); },
-        onMouseEnter: e => { if (!sel) e.currentTarget.style.background = "rgba(214,44,44,0.08)"; },
+        onClick: e => { e.stopPropagation(); if (canHide) this.togglePortSel(dev.id, side, p.id); },
+        onMouseEnter: e => { if (canHide && !sel) e.currentTarget.style.background = "rgba(214,44,44,0.08)"; },
         onMouseLeave: e => { e.currentTarget.style.background = sel ? "rgba(214,44,44,0.10)" : "transparent"; },
         style: { flex: 1, minWidth: 0, height: this.PORT_H - 6, display: "flex", alignItems: "center", justifyContent: isIn ? "flex-start" : "flex-end",
-          padding: "0 5px", margin: isIn ? "0 0 0 6px" : "0 6px 0 0", borderRadius: "var(--radius-sm)", cursor: "pointer",
+          padding: "0 5px", margin: isIn ? "0 0 0 6px" : "0 6px 0 0", borderRadius: "var(--radius-sm)", cursor: canHide ? "pointer" : "default",
           background: sel ? "rgba(214,44,44,0.10)" : "transparent", transition: "background 0.12s" } },
         R("span", { style: { fontSize: 10, color: !routeable ? "var(--fg-subtle)" : (hasSig ? "var(--fg)" : "var(--fg-subtle)"), fontWeight: hasSig && routeable ? 700 : 400,
           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", pointerEvents: "none" } }, p.label));
-      const gear = this.portGear(dev, side, p);
+      // Per-port gear: deep-links into the Settings modal (#12, unscoped, target is LATER).
+      const gear = this.phaseAtLeast("later") ? this.portGear(dev, side, p) : null;
       return R("div", { key: p.id, className: "cp-port-row",
         onPointerDown: e => e.stopPropagation(),
         style: { position: "absolute", [isIn ? "left" : "right"]: 0, width: COL_W, top: this.CARD_PAD + i * this.PORT_H, height: this.PORT_H,
@@ -1397,7 +1440,7 @@ class Component extends DCLogic {
   // ============ INTERNAL DSP MODAL (read-only) ============
   openDspModal(devId) {
     const dev = this.deviceById(devId);
-    if (!dev || !this.hasInternalDsp(dev)) return;
+    if (!dev || !this.hasInternalDsp(dev) || !this.phaseAtLeast("later")) return;
     this.setState({ dspModal: { devId, inputId: dev.inputs[0]?.id || null, outputId: dev.outputs[0]?.id || null } });
     this.track("canvasInteractions", "Open internal DSP view · " + dev.name);
   }
@@ -1420,7 +1463,7 @@ class Component extends DCLogic {
   // that exact input/output selected.
   openSettingsModal(devId, opts = {}) {
     const dev = this.deviceById(devId);
-    if (!dev) return;
+    if (!dev || !this.phaseAtLeast("later")) return;
     const side = opts.side || "input";
     const section = opts.section || (side === "output" ? "output-settings" : "input-settings");
     const idx = Math.max(0, this.settingsPorts(dev, side).findIndex(p => p.id === opts.portId));
@@ -1540,7 +1583,7 @@ class Component extends DCLogic {
   SettingsModal() {
     const R = React.createElement;
     const m = this.state.settingsModal;
-    if (!m) return null;
+    if (!m || !this.phaseAtLeast("later")) return null;
     const dev = this.deviceById(m.devId);
     if (!dev) return null;
     const nav = this.SETTINGS_NAV.find(n => n.id === m.section) || this.SETTINGS_NAV[0];
@@ -1690,7 +1733,7 @@ class Component extends DCLogic {
   DspModal() {
     const R = React.createElement;
     const m = this.state.dspModal;
-    if (!m) return null;
+    if (!m || !this.phaseAtLeast("later")) return null;
     const dev = this.deviceById(m.devId);
     if (!dev) return null;
     const inPort = dev.inputs.find(p => p.id === m.inputId) || dev.inputs[0];
@@ -1776,15 +1819,15 @@ class Component extends DCLogic {
   RoutingGrid() {
     const R = React.createElement;
     const s = this.state;
-    const devices = s.sel.type === "system" ? this.DEVICES : s.sel.type === "floor" ? this.devicesInFloor(s.sel.id) : s.sel.type === "room" ? this.devicesInRoom(s.sel.id) : this.DEVICES;
-    // Ports hidden in the Routing Map (individual hide) are excluded here too, keeping the
+    const devices = s.sel.type === "system" ? this.deviceListForPhase() : s.sel.type === "floor" ? this.devicesInFloor(s.sel.id) : s.sel.type === "room" ? this.devicesInRoom(s.sel.id) : this.deviceListForPhase();
     // Matrix and canvas in sync \u2014 a hidden port is not a row or column.
     const sources = devices.flatMap(d => d.outputs.filter(p => !this.isPortHidden(d.id, "output", p.id) && this.signalVisible(p.signal)).map(p => ({ devId: d.id, devName: d.name, portId: p.id, portLabel: p.label, signal: p.signal })));
     const dests = devices.flatMap(d => d.inputs.filter(p => !this.isPortHidden(d.id, "input", p.id) && this.signalVisible(p.signal)).map(p => ({ devId: d.id, devName: d.name, portId: p.id, portLabel: p.label, signal: p.signal })));
     const hiddenCount = devices.reduce((n, d) => n + (s.hiddenPorts[d.id] || []).length, 0);
+    const canHide = this.phaseAtLeast("next"); // B-38 hide-a-row/column — NEXT.
     if (!sources.length || !dests.length) return R("div", { style: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, color: "var(--fg-muted)", fontSize: 14 } },
       "No routable ports in this view",
-      hiddenCount ? R("button", { onClick: () => this.unhideInViewToSelection(devices), className: "cp-btn", style: { display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "#fff", color: "var(--crestron-true-blue)", fontSize: 12, fontWeight: 600, cursor: "pointer" } }, this.ic("eye", 13, "var(--crestron-true-blue)"), `Show ${hiddenCount} hidden port${hiddenCount > 1 ? "s" : ""}`) : null);
+      canHide && hiddenCount ? R("button", { onClick: () => this.unhideInViewToSelection(devices), className: "cp-btn", style: { display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "#fff", color: "var(--crestron-true-blue)", fontSize: 12, fontWeight: 600, cursor: "pointer" } }, this.ic("eye", 13, "var(--crestron-true-blue)"), `Show ${hiddenCount} hidden port${hiddenCount > 1 ? "s" : ""}`) : null);
     const isRouted = (sd, sp, dd, dp) => s.routes.some(r => r.fromDevice === sd && r.fromPort === sp && r.toDevice === dd && r.toPort === dp);
     const toggleCell = (src, dst) => {
       if (src.devId === dst.devId) return;
@@ -1807,22 +1850,22 @@ class Component extends DCLogic {
     const pendingEye = (onClick, title) => R("button", { onClick: e => { e.stopPropagation(); onClick(); }, className: "cp-btn", title,
       style: { width: 18, height: 18, borderRadius: "var(--radius-sm)", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, flexShrink: 0 } }, this.ic("eye", 13, "var(--danger)"));
     return R("div", { style: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column", background: "var(--bg-muted)" } },
-      R("div", { style: { flexShrink: 0, padding: "10px 14px", borderBottom: "1px solid var(--border)", background: "#fff" } },
-        this.SignalLegend({ maxWidth: "100%" })),
+      this.phaseAtLeast("next") ? R("div", { style: { flexShrink: 0, padding: "10px 14px", borderBottom: "1px solid var(--border)", background: "#fff" } },
+        this.SignalLegend({ maxWidth: "100%" })) : null,
       R("div", { style: { flex: 1, overflow: "auto" } },
       R("div", { style: { display: "inline-block", minWidth: "100%" } },
         R("div", { style: { display: "flex" } },
           R("div", { style: { width: LABEL_W, height: HDR_H, flexShrink: 0, background: "var(--bg-subtle)", borderRight: "1px solid var(--border-strong)", borderBottom: "1px solid var(--border-strong)", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "space-between", padding: "8px 10px" } },
-            hiddenCount ? R("button", { onClick: () => this.unhideInViewToSelection(devices), className: "cp-btn", title: "Show all hidden ports", style: { display: "flex", alignItems: "center", gap: 5, padding: "3px 8px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "#fff", color: "var(--crestron-true-blue)", fontSize: 10, fontWeight: 700, cursor: "pointer" } }, this.ic("eye", 11, "var(--crestron-true-blue)"), `Show ${hiddenCount} hidden`) : R("span", null),
+            hiddenCount && canHide ? R("button", { onClick: () => this.unhideInViewToSelection(devices), className: "cp-btn", title: "Show all hidden ports", style: { display: "flex", alignItems: "center", gap: 5, padding: "3px 8px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "#fff", color: "var(--crestron-true-blue)", fontSize: 10, fontWeight: 700, cursor: "pointer" } }, this.ic("eye", 11, "var(--crestron-true-blue)"), `Show ${hiddenCount} hidden`) : R("span", null),
             R("span", { style: { fontSize: 10, fontWeight: 700, color: "var(--fg-subtle)", textTransform: "uppercase", letterSpacing: "0.06em" } }, "Source \u2192 Dest")),
           dests.map((d, ci) => { const pending = this.isPortSel(d.devId, "input", d.portId); return R("div", { key: "h" + ci, onMouseEnter: () => { setHover(-1, ci); setLabelHover(-1, ci); }, onMouseLeave: () => { setHover(-1, -1); setLabelHover(-1, -1); }, style: { width: CELL, height: HDR_H, flexShrink: 0, background: pending ? "rgba(214,44,44,0.10)" : hc === ci ? "var(--blue-50)" : "var(--bg-subtle)", borderRight: "1px solid var(--border)", borderBottom: "1px solid var(--border-strong)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", paddingBottom: 5, gap: 4 } },
-            R("div", { style: { height: 18, display: "flex", alignItems: "center" } }, pending ? pendingEye(() => this.togglePortSel(d.devId, "input", d.portId), "Re-selected (was hidden) — click to unhide") : lc === ci ? hideBtn(() => this.hidePort(d.devId, "input", d.portId), "Hide this destination") : null),
+            R("div", { style: { height: 18, display: "flex", alignItems: "center" } }, !canHide ? null : pending ? pendingEye(() => this.togglePortSel(d.devId, "input", d.portId), "Re-selected (was hidden) — click to unhide") : lc === ci ? hideBtn(() => this.hidePort(d.devId, "input", d.portId), "Hide this destination") : null),
             R("div", { style: { writingMode: "vertical-rl", transform: "rotate(180deg)", fontSize: 9, fontWeight: 500, color: "var(--fg)", overflow: "hidden", maxHeight: HDR_H - 32, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4 } }, R("span", { style: { width: 6, height: 6, borderRadius: "50%", background: this.SIGNAL_COLORS[d.signal] } }), `${d.devName}/${d.portLabel}`)); })),
         sources.map((src, ri) => R("div", { key: "r" + ri, style: { display: "flex" } },
           R("div", { onMouseEnter: () => { setHover(ri, -1); setLabelHover(ri, -1); }, onMouseLeave: () => { setHover(-1, -1); setLabelHover(-1, -1); }, style: { width: LABEL_W, height: CELL, flexShrink: 0, display: "flex", alignItems: "center", padding: "0 10px", borderRight: "1px solid var(--border-strong)", borderBottom: "1px solid var(--border)", fontSize: 10, color: "var(--fg)", background: this.isPortSel(src.devId, "output", src.portId) ? "rgba(214,44,44,0.10)" : hr === ri ? "var(--blue-50)" : ri % 2 === 0 ? "#fff" : "var(--neutral-50)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", gap: 6 } },
             R("div", { style: { width: 6, height: 6, borderRadius: "50%", background: this.SIGNAL_COLORS[src.signal], flexShrink: 0 } }),
             R("span", { style: { flex: 1, overflow: "hidden", textOverflow: "ellipsis" } }, `${src.devName}/${src.portLabel}`),
-            this.isPortSel(src.devId, "output", src.portId) ? pendingEye(() => this.togglePortSel(src.devId, "output", src.portId), "Re-selected (was hidden) — click to unhide") : lr === ri ? hideBtn(() => this.hidePort(src.devId, "output", src.portId), "Hide this source") : null),
+            !canHide ? null : this.isPortSel(src.devId, "output", src.portId) ? pendingEye(() => this.togglePortSel(src.devId, "output", src.portId), "Re-selected (was hidden) — click to unhide") : lr === ri ? hideBtn(() => this.hidePort(src.devId, "output", src.portId), "Hide this source") : null),
           dests.map((dst, ci) => {
             const routed = isRouted(src.devId, src.portId, dst.devId, dst.portId);
             const disabled = src.devId === dst.devId || !this.signalsCompatible(src.signal, dst.signal);
@@ -1887,7 +1930,9 @@ class Component extends DCLogic {
   DeviceDetailPanel(device) {
     const R = React.createElement;
     if (!device) return R("div", { style: { flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--fg-muted)" } }, "Select a device");
-    if (device.manufacturer === "Crestron" && device.type !== "Speaker") return this.CrestronDevicePanel(device);
+    // Device Configuration / health panel (#13, unscoped — device lifecycle & health mgmt
+    // outside the routing story map) — only demo it under LATER.
+    if (device.manufacturer === "Crestron" && device.type !== "Speaker" && this.phaseAtLeast("later")) return this.CrestronDevicePanel(device);
     const rows = [["Status", device.status, device.status === "Online" ? "var(--success)" : "var(--danger)"], ["Model", device.model], ["Manufacturer", device.manufacturer], ["Type", device.type], ["Room", device.room]];
     const sectionHdr = (t) => R("div", { style: { padding: "12px 16px", borderBottom: "1px solid var(--border)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "var(--fg-subtle)", letterSpacing: "0.07em" } }, t);
     return R("div", { style: { flex: 1, overflowY: "auto", padding: "26px 30px", background: "var(--bg-muted)" } },
@@ -2022,7 +2067,7 @@ class Component extends DCLogic {
     const R = React.createElement;
     const s = this.state;
     if (s.sel.type === "system") {
-      const stats = [["Rooms", this.allRooms().length], ["Devices", this.DEVICES.length], ["Routes", s.routes.length]];
+      const stats = [["Rooms", this.allRooms().length], ["Devices", this.deviceListForPhase().length], ["Routes", s.routes.length]];
       return R("div", { style: { flex: 1, overflowY: "auto", padding: "26px 30px", background: "var(--bg-muted)" } },
         R("h2", { style: { fontSize: 22, fontWeight: 700, margin: "0 0 20px", color: "var(--fg-strong)", fontFamily: "var(--font-display)" } }, "Whole System"),
         R("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 } }, stats.map(([k, v]) => R("div", { key: k, style: { background: "#fff", borderRadius: "var(--radius-lg)", border: "1px solid var(--border)", padding: "16px 18px", boxShadow: "var(--shadow-xs)" } },

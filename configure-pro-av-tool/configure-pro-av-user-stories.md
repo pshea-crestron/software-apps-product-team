@@ -19,7 +19,7 @@
 |---|---|---|---|
 | Summary | + Deliver the primary zoomable workspace where installers and designers see, arrange, and interact with their full AV system through node-based device representation, signal connections, and room/system switching. <br>+ View and create routes in a matrix-based routing matrix for high-density channel routing. <br>+ Enable core route creation with drag-to-connect routing, constraint validation, and bidirectional sync between the canvas and routing matrix. <br>+ Provide signal tracing, device status widgets, and core troubleshooting instrumentation for the initial onsite commissioning experience. <br>+ Give installers quick-access gain, mute, and delay adjustments directly from within the advanced device view on the canvas. | + Build on the routing foundation with canvas labeling, port visibility controls, and schematic refinement tools for more polished system designs. <br>+ Surface real-time signal metering on canvas connections to confirm what's actually active during live operation, plus guided signal-break detection.| + Deliver structured diagnostic flows, sequential DSP path inspection, and proactive error surfacing to speed up complex issue resolution. |
 |---|---|---|---|
-| **1. Canvas & Visual Workspace** | **A-01:** Render live devices as visual nodes so installers can see the full system at a glance<br><br>**A-02:** Persist canvas layout across sessions so context is never lost<br><br>**A-03:** Switch between rooms to zoom in on a set of devices<br><br>**A-37:** Show a short labeled stub for wires that lead to off-canvas devices so connections stay legible<br><br>**A-27:** Instrument canvas workspace usage to measure whether the canvas is becoming the primary configuration surface<br><br>**A-35:** Snap devices and rooms to a grid while dragging so the canvas stays cleanly aligned | — | — |
+| **1. Canvas & Visual Workspace** | **A-01:** Render live devices as visual nodes so installers can see the full system at a glance<br><br>**A-02:** Persist canvas layout across sessions so context is never lost<br><br>**A-03:** Switch between rooms to zoom in on a set of devices<br><br>**A-37:** Show a short labeled stub for wires that lead to off-canvas devices so connections stay legible<br><br>**A-27:** Instrument canvas workspace usage to measure whether the canvas is becoming the primary configuration surface<br><br>**A-35:** Snap devices to a grid while dragging so the canvas stays cleanly aligned | — | — |
 | **2. Routing & Signal Flow** | **A-05:** Create a route by connecting device nodes on the canvas<br><br>**A-06:** See canvas and routing matrix stay in sync so routing can be trusted<br><br>**A-07:** Prevent invalid routes from being created to avoid bad configurations<br><br>**A-28:** Instrument routing interactions to measure drag-drop success rate and routing error frequency<br><br>**A-34:** View and create routes in a matrix-based routing matrix for high-density channel routing | — | **C-40:** Define fixed AoIP and AVoIP routes on hardware that supports them |
 | **3. Advanced Routing & Canvas Customization** | — | **B-08:** Add a text tag to label any source or destination point on the canvas<br><br>**B-09:** Customize which inputs and outputs are visible on a device node to reduce canvas clutter<br><br>**B-34:** Filter the canvas and Matrix by signal type from a consistent legend so only relevant ports and wires are shown<br><br>**B-36:** Resize a device node automatically when its ports are hidden so no empty space remains<br><br>**B-38:** Hide a source row or destination column directly from the Matrix view, synced to the Routing Map | — |
 | **4. Basic Troubleshooting & Live Monitoring** | **A-10:** Trace a signal path end-to-end to quickly find where it breaks<br><br>**A-12:** See a real-time status widget for each NAX device to monitor crucial device health at a glance<br><br>**A-13:** Enter troubleshooting mode to establish the designed AoIP/AVoIP path on the hardware and find where signal breaks<br><br>**A-29:** Instrument troubleshooting workflows to measure time-to-diagnosis and external tool switching | — | — |
@@ -133,9 +133,9 @@
 
 ##### Acceptance Criteria:
 **Scenario:** Layout restores after closing and reopening the system
-- **Given:** I have a system open with nodes positioned, zoom set, and groupings defined on the canvas
+- **Given:** I have a system open with nodes positioned and zoom set on the canvas
 - **When:** I close Configure Pro and reopen the same system on the same machine
-- **Then:** The canvas restores to the exact same node positions, zoom level, pan position, and groupings I had previously, with no manual reconstruction required
+- **Then:** The canvas restores to the exact same node positions, zoom level, and pan position I had previously, with no manual reconstruction required
 
 **Scenario:** Layout is saved without an explicit save action
 - **Given:** I have the Routing Map open
@@ -158,6 +158,7 @@
 - **and Given:** A device that was on the canvas is no longer present on the processor
 - **When:** I reopen the system
 - **Then:** That node is removed from the canvas and every remaining node keeps its saved position, with no error state or re-arrangement
+- **And** the wires or routes that connected the removed node to other nodes are deleted
 
 **Scenario:** Layout cannot be lost by an interrupted session
 - **Given:** I have arranged the canvas and made no other changes
@@ -166,7 +167,7 @@
 
 ## Can we cover these scenarios easily in Phase-A MVP? If not, can we achieve these in a later phase?
 **Scenario:** Each scope keeps its own view state
-- **Given:** I have arranged and zoomed the canvas differently at Whole System, Room Group, and individual Room scopes
+- **Given:** I have arranged and zoomed the canvas differently at Whole System, Room Group (floor), and individual Room scopes
 - **When:** I switch away from a scope and later return to it
 - **Then:** That scope's own node positions, zoom, and pan are restored independently of the other scopes
 
@@ -186,6 +187,7 @@
 ##### Out of Scope:
 - Layout travelling with the system between machines or from offline design to site — covered by **D-39**
 - Persistence of hidden-port state and signal-type filter selection — those features are Phase B (**B-09**, **B-34**, **B-38**) and each will carry its own persistence criteria
+- Initial render of devices and routes on the canvas — covered by **A-01**
 
 ---
 
@@ -241,7 +243,7 @@
 ##### Use Case:
 - **As a** product manager tracking Configure Pro adoption
 - **I want to** capture telemetry on how users interact with the canvas — including session frequency, active time on canvas, and routing interactions initiated from the canvas versus other surfaces
-- **so that** I can measure whether the canvas is achieving its target of ≥70% of routing interactions and validate that users are not defaulting back to legacy tools
+- **so that** I can measure whether the canvas is achieving its target of ≥70% [TBD target] of routing interactions and validate that users are not defaulting back to legacy tools
 
 ##### Acceptance Criteria:
 **Scenario:** Product team reviews canvas adoption metrics after Phase A launch
@@ -253,11 +255,12 @@
 ---
 
 #### User Story A-35
-- **Summary:** Snap devices and rooms to a grid while dragging so the canvas stays cleanly aligned
+- **Summary:** Snap devices to a grid while dragging so the canvas stays cleanly aligned
+- **Jira:** CHOME-122620
 
 ##### Use Case:
-- **As an** installer arranging device nodes and room groups on the canvas
-- **I want to** have both device nodes and room groups snap to a shared alignment grid as I drag them
+- **As an** installer arranging device nodes on the canvas
+- **I want to** have device nodes snap to a shared alignment grid as I drag them
 - **so that** I can line everything up neatly without fiddling for pixel-perfect placement
 
 ##### Acceptance Criteria:
@@ -267,17 +270,10 @@
 - **When:** I drag a device node and release it
 - **Then:** The node's position snaps to the nearest grid increment on both axes, aligning with other nodes placed on the same grid
 
-**Scenario:** Installer drags a room group across the canvas
-- **Given:** I have a system on the canvas with a room group containing one or more devices
-- **and Given:** The canvas alignment grid is active
-- **When:** I drag the room group by its label
-- **Then:** The room group snaps to the same grid increments as devices, the devices inside retain their relative positions, and the group aligns with other rooms and nodes on the grid
-
-**Scenario:** Installer drags a room group toward another room
-- **Given:** I have a system on the canvas with two or more room groups
-- **and Given:** I am dragging one room group
-- **When:** The dragged room's bounds would overlap another room's bounds
-- **Then:** The move is prevented at that position so the two rooms never overlap, and the room can still be moved freely into any non-overlapping position
+##### Out of Scope:
+- Persistence of the snapped positions across sessions — covered by **A-02**
+- Initial auto-arrangement of nodes when a system is first opened — covered by **A-01**
+- Drawn room-boundary containers on the canvas that group a room's devices — the concept was removed from Phase A because it introduced overlapping bounds and boundaries that did not earn their complexity. If it returns, it needs its own story defining what a room group is, how it is created, and how a device joins one (the capabilities doc parks smarter grouping in Phase C).
 
 ---
 
@@ -1173,7 +1169,7 @@ Entering the mode creates real routes on live NAX/NVX devices and tears them dow
 - **Given:** I have designed a system offline and arranged its canvas layout
 - **and Given:** I open that system from a different machine at the job site
 - **When:** The canvas loads
-- **Then:** My node positions, zoom, pan, and groupings are restored exactly as I arranged them offline, without re-arrangement
+- **Then:** My node positions, zoom, and pan are restored exactly as I arranged them offline, without re-arrangement
 
 **Scenario:** Layout is retained with the system at commissioning
 - **Given:** I have an offline-designed system with an arranged canvas layout
