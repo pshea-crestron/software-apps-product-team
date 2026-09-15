@@ -25,7 +25,7 @@
 | **4. Basic Troubleshooting & Live Monitoring** | **A-10:** Trace a signal path end-to-end to quickly find where it breaks<br><br>**A-12:** See a real-time status widget for each NAX device to monitor crucial device health at a glance<br><br>**A-13:** Enter troubleshooting mode to establish the designed AoIP/AVoIP path on the hardware and find where signal breaks<br><br>**A-29:** Instrument troubleshooting workflows to measure time-to-diagnosis and external tool switching | — | — |
 | **5. Live Meters & Signal Presence** | — | **B-11:** See live meters and device status directly on canvas nodes | — |
 | **6. Advanced Troubleshooting** | — | — | **C-14:** View the sequential DSP blocks for any signal path and edit any block inline<br><br>**C-15:** Surface error states and suspicious device conditions proactively on the canvas |
-| **7. Inline DSP Controls** | — | **B-16:** Adjust gain or mute inline on a device node<br><br>**B-30:** Instrument DSP interactions to measure whether Configure Pro is replacing external DSP tools | — |
+| **7. Inline DSP Controls** | — | - | **C-16:** Adjust gain or mute inline on a device node<br><br>**C-30:** Instrument DSP interactions to measure whether Configure Pro is replacing external DSP tools |
 | **8. Device-Level DSP Configuration** | — | — | **C-17:** Open a device-level dashboard with a focused audio view for deep per-device configuration<br><br>**C-18:** Edit DSP blocks graphically (EQ, mixers, internal matrices) for advanced tuning |
 | **9. Device Discovery & Representation** | **A-31:** Instrument device panel usage to measure how installers are adding devices to the canvas | — | **C-19:** Clearly distinguish discovered (physical) devices from placeholder devices on the canvas<br><br>**C-20:** Represent analog amplifiers and passive speakers as static nodes so they can participate in routing and visualization |
 | **10. Deployment & Live System State** | — | **B-23:** See a "what is live right now" view to confirm deployed configuration<br><br>**B-24:** Confirm that configuration will persist on devices after disconnecting<br><br>**B-32:** Instrument deployment events to measure first-time success rate and catch data loss incidents | — |
@@ -848,7 +848,7 @@ Entering the mode creates real routes on live NAX/NVX devices and tears them dow
 
 ---
 
-#### User Story B-16
+#### User Story C-16
 - **Summary:** Adjust gain or mute inline on a device node
 
 ##### Use Case:
@@ -865,7 +865,7 @@ Entering the mode creates real routes on live NAX/NVX devices and tears them dow
 
 ---
 
-#### User Story B-30
+#### User Story C-30
 - **Summary:** Instrument DSP interactions to measure whether Configure Pro is replacing external DSP tools
 
 ##### Use Case:

@@ -1,21 +1,17 @@
-Project documentation:
+# Configure Pro AV Project
 
-- configure-pro-av-product-capabilities.md
-- configure-pro-av-user-stories.md
-
-When making changes:
-- Consult the PRD and user stories.
-- Ensure requirements remain aligned.
-
-Technology constraints:
+## Technology
 - HTML5
 - CSS3
 - Vanilla JavaScript
- 
-Do not:
-- Add React
-- Add Vue
-- Add Angular
 
-Preserve:
-- ./configure-pro-av-tool-mock-v2/assets/
+## Constraints
+- Do not introduce React, Vue, Angular, or other frameworks.
+- Preserve all files in configure-pro-av-tool-mock-v2/assets.
+
+## Requirements
+Project requirements and user stories are maintained in:
+- configure-pro-av-product-capabilities.md
+- configure-pro-av-user-stories.md
+
+Consult those files when implementing features or validating requirements.
