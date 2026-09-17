@@ -248,6 +248,9 @@ class Component extends DCLogic {
     selectedDev: null,
     dspModal: null,
     settingsModal: null,
+    audioDashboard: null,
+    audioDashboardTab: {},
+    audioDashboardValues: {},
     audioLevels: {},
     mixSelect: {},
     multicastEdits: {},
@@ -720,6 +723,7 @@ class Component extends DCLogic {
       ),
       s.telemetryOpen ? this.TelemetryPanel() : null,
       this.DspModal(),
+      this.AudioDashboardModal(),
       this.SettingsModal(),
     );
   }
@@ -1296,7 +1300,7 @@ class Component extends DCLogic {
       ),
       // Crestron device settings gear (top-right corner of the card). Opens the Input/Output
       // Settings + Audio modal — C-17/C-18 — LATER.
-      dev.manufacturer === "Crestron" && this.phaseAtLeast("later") ? R("button", { key: "gear", onClick: e => { e.stopPropagation(); e.preventDefault(); this.openSettingsModal(dev.id); }, onDoubleClick: e => e.stopPropagation(), onPointerDown: e => e.stopPropagation(), className: "cp-btn", title: "Device settings",
+      dev.manufacturer === "Crestron" && this.phaseAtLeast("later") ? R("button", { key: "gear", onClick: e => { e.stopPropagation(); e.preventDefault(); dev.id === "eq-nax-8zsa" ? this.openAudioDashboard(dev.id) : this.openSettingsModal(dev.id); }, onDoubleClick: e => e.stopPropagation(), onPointerDown: e => e.stopPropagation(), className: "cp-btn", title: dev.id === "eq-nax-8zsa" ? "Open Audio Dashboard" : "Device settings",
         style: { position: "absolute", top: -10, right: -10, width: 24, height: 24, borderRadius: "50%", border: "1px solid var(--border)", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, boxShadow: "var(--shadow-xs)", zIndex: 25 } },
         this.gearIcon(16)) : null,
       // A-12 NAX status widget band
@@ -1473,6 +1477,26 @@ class Component extends DCLogic {
   closeSettingsModal() { this.setState({ settingsModal: null }); }
   setSettingsSel(patch) { this.setState(p => ({ settingsModal: { ...p.settingsModal, ...patch } })); }
 
+  openAudioDashboard(devId) {
+    const dev = this.deviceById(devId);
+    if (!dev || dev.id !== "eq-nax-8zsa" || !this.phaseAtLeast("later")) return;
+    this.setState(prev => ({ audioDashboard: { devId }, audioDashboardTab: { ...prev.audioDashboardTab, [devId]: prev.audioDashboardTab[devId] || "about" } }));
+    this.track("canvasInteractions", "Open Audio Dashboard · " + dev.name);
+  }
+  closeAudioDashboard() { this.setState({ audioDashboard: null }); }
+  setAudioDashboardTab(tab) {
+    const devId = this.state.audioDashboard?.devId;
+    if (!devId) return;
+    this.setState(prev => ({ audioDashboardTab: { ...prev.audioDashboardTab, [devId]: tab } }));
+  }
+  getAudioDashboardValues(devId) {
+    return this.state.audioDashboardValues[devId] || { inputGain: 0, outputGain: -12, delay: 0, volume: -18, eqBand: 1, eqFrequency: 0, eqGain: 0, eqBandwidth: 0 };
+  }
+  setAudioDashboardValue(devId, key, value) {
+    this.setState(prev => ({ audioDashboardValues: { ...prev.audioDashboardValues, [devId]: { ...this.getAudioDashboardValues(devId), [key]: value } } }));
+    this.track("dspAdjust", "Audio Dashboard · " + key);
+  }
+
   // ---- Audio-screen state (prototype only): per-port fader level and per-output mix source ----
   levelKey(devId, side, portId) { return devId + "|" + side + "|" + portId; }
   getLevel(devId, side, portId, dflt = 0) {
@@ -1495,6 +1519,93 @@ class Component extends DCLogic {
       onPointerDown: e => e.stopPropagation(), onDoubleClick: e => e.stopPropagation(),
       style: { width: 14, height: 14, flexShrink: 0, border: "none", background: "transparent", padding: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" } },
       this.gearIcon(11));
+  }
+
+  AudioDashboardModal() {
+    const R = React.createElement;
+    const m = this.state.audioDashboard;
+    if (!m || !this.phaseAtLeast("later")) return null;
+    const dev = this.deviceById(m.devId);
+    if (!dev || dev.id !== "eq-nax-8zsa") return null;
+    const tab = this.state.audioDashboardTab[dev.id] || "about";
+    const values = this.getAudioDashboardValues(dev.id);
+    const dsp = this.state.deviceDsp[dev.id] || { gain: 0, mute: false };
+    const meta = this.DEVICE_META[dev.id] || {};
+    const card = (children, key) => R("div", { key, style: { background: "#fff", borderRadius: 16, border: "1px solid var(--border)", boxShadow: "var(--shadow-xs)", overflow: "hidden" } }, children);
+    const label = (text) => R("div", { style: { fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--fg-subtle)", marginBottom: 8 } }, text);
+    const row = (name, value, color) => R("div", { key: name, style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "12px 16px", borderBottom: "1px solid var(--neutral-100)" } },
+      R("span", { style: { fontSize: 13.5, color: "var(--fg)" } }, name),
+      R("span", { style: { fontSize: 13.5, color: color || "var(--fg-subtle)", fontWeight: 600, textAlign: "right" } }, value));
+    const slider = (key, name, min, max, step, unit, accent) => {
+      const value = values[key];
+      const display = `${value > 0 ? "+" : ""}${value} ${unit}`;
+      return R("div", { key, style: { background: "#fff", border: "1px solid var(--border)", borderRadius: 12, padding: "13px 15px" } },
+        R("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, marginBottom: 9 } },
+          R("span", { style: { fontSize: 13, fontWeight: 700, color: "var(--fg-strong)" } }, name),
+          R("span", { style: { fontSize: 12, color: accent, fontWeight: 800, fontFamily: "var(--font-mono)" } }, display)),
+        R("input", { type: "range", className: "cp-range", min, max, step, value, onChange: e => this.setAudioDashboardValue(dev.id, key, Number(e.target.value)), style: { width: "100%", accentColor: accent, cursor: "pointer" } }),
+        R("div", { style: { display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 9.5, color: "var(--fg-subtle)", fontFamily: "var(--font-mono)" } }, R("span", null, `${min} ${unit}`), R("span", null, `${max} ${unit}`)));
+    };
+    const tabButton = (id, text) => R("button", { key: id, onClick: () => this.setAudioDashboardTab(id), className: "cp-btn", style: { padding: "10px 18px", border: "none", borderBottom: `3px solid ${tab === id ? "var(--crestron-true-blue)" : "transparent"}`, background: "transparent", color: tab === id ? "var(--crestron-true-blue)" : "var(--fg-subtle)", fontSize: 12, fontWeight: 800, letterSpacing: "0.05em", cursor: "pointer" } }, text);
+
+    const aboutBody = R("div", { style: { display: "flex", flexDirection: "column", gap: 18 } },
+      R("div", { style: { display: "flex", alignItems: "center", gap: 12 } },
+        R("div", { style: { width: 42, height: 42, borderRadius: 10, background: "var(--blue-50)", display: "flex", alignItems: "center", justifyContent: "center" } }, this.protoDeviceIcon(dev, 25)),
+        R("div", { style: { flex: 1 } },
+          R("div", { style: { fontSize: 17, fontWeight: 800, color: "var(--fg-strong)" } }, dev.name),
+          R("div", { style: { fontSize: 12, color: "var(--success)", fontWeight: 700, marginTop: 3 } }, "Online")),
+        R("span", { style: { display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--success)", fontWeight: 700 } }, R("span", { style: { width: 7, height: 7, borderRadius: "50%", background: "var(--success)" } }), "Connected")),
+      card([R("div", { key: "heading", style: { padding: "14px 16px 7px", fontSize: 11, fontWeight: 800, color: "var(--fg-subtle)", textTransform: "uppercase", letterSpacing: "0.06em" } }, "Device information"),
+        row("Status", dev.status, "var(--success)"), row("Model", dev.model), row("Manufacturer", dev.manufacturer), row("Serial Number", meta.serial || "—"), row("Firmware Version", meta.firmware || "—"), row("Type", meta.typeLabel || "Audio Switcher"), row("Hostname", meta.hostname || "—"), row("IP Address", meta.ip || "—"), row("MAC Address", meta.mac || "—"), row("IP ID", meta.ipId || "—")], "about-info"),
+      R("div", { style: { display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 18 } },
+        card([R("div", { key: "heading", style: { padding: "14px 16px 7px", fontSize: 11, fontWeight: 800, color: "var(--fg-subtle)", textTransform: "uppercase", letterSpacing: "0.06em" } }, "Setup"), row("Multicast Address", meta.multicast || "—")], "about-setup"),
+        card([R("div", { key: "heading", style: { padding: "14px 16px 7px", fontSize: 11, fontWeight: 800, color: "var(--fg-subtle)", textTransform: "uppercase", letterSpacing: "0.06em" } }, "Health"), row("Device status", "Healthy", "var(--success)"), row("Signal routes", `${this.state.routes.filter(r => r.fromDevice === dev.id || r.toDevice === dev.id).length}`, "var(--crestron-mid-blue)")], "about-health")),
+      R("div", { style: { padding: "12px 14px", background: "var(--blue-50)", border: "1px solid rgba(67,197,227,0.35)", borderRadius: 10, fontSize: 12, color: "var(--crestron-mid-blue)" } }, "Audio Dashboard · 34 × 16 internal routing matrix"));
+
+    const dark = "#fff", darker = "var(--bg-subtle)", blue = "var(--crestron-true-blue)", green = "var(--success)", red = "var(--danger)", gold = "var(--crestron-gold)";
+    const audioPanel = (children, key, extra = {}) => R("div", { key, style: { background: dark, border: "1px solid var(--border)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-xs)", overflow: "hidden", ...extra } }, children);
+    const tiny = (text, color = "var(--fg-subtle)") => R("span", { style: { fontSize: 8, color, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 800 } }, text);
+    const statusCells = (title, count, activeIndex = -1) => R("div", { style: { background: darker, padding: "8px 10px", border: "1px solid var(--border)" } },
+      R("div", { style: { display: "flex", justifyContent: "space-between", marginBottom: 6 } }, tiny(title, blue), tiny(`${count} · 8`, green)),
+      R("div", { style: { display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 3 } }, Array.from({ length: 8 }, (_, i) => R("div", { key: i, style: { height: 6, background: i === activeIndex ? red : i % 3 === 0 ? gold : "var(--neutral-300)", borderRadius: 1 } }))));
+    const dashSlider = (key, name, min, max, step, unit, color = blue) => {
+      const value = values[key];
+      return R("div", { key, style: { padding: "7px 9px", background: darker, borderTop: "1px solid var(--border)" } },
+        R("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 } }, tiny(name, "var(--fg-muted)"), R("span", { style: { fontSize: 9, color, fontFamily: "var(--font-mono)" } }, `${value > 0 ? "+" : ""}${value}${unit}`)),
+        R("input", { type: "range", min, max, step, value, onChange: e => this.setAudioDashboardValue(dev.id, key, Number(e.target.value)), style: { width: "100%", height: 5, accentColor: color, cursor: "pointer" } }));
+    };
+    const inputRows = Array.from({ length: 8 }, (_, i) => R("div", { key: i, style: { padding: "8px 8px 7px", borderBottom: "1px solid var(--border)", background: i % 2 ? "var(--neutral-50)" : dark } },
+      R("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 } }, R("span", { style: { fontSize: 10, color: "var(--fg-strong)", fontWeight: 700 } }, i < 4 ? `DIGITAL INPUT ${i + 1} / CUSTOM NAME` : `ANALOG INPUT ${i - 3} / CUSTOM NAME`), R("span", { style: { fontSize: 8, color: green } }, "SIGNAL")),
+      R("div", { style: { display: "flex", alignItems: "center", gap: 6 } }, R("button", { onClick: () => this.toggleDeviceMute(dev.id), className: "cp-btn", style: { background: red, color: "#fff", border: "none", padding: "3px 6px", fontSize: 7, fontWeight: 800, cursor: "pointer" } }, "MUTE"), R("input", { type: "range", min: -10, max: 10, value: values.inputGain, onChange: e => this.setAudioDashboardValue(dev.id, "inputGain", Number(e.target.value)), style: { flex: 1, accentColor: blue, cursor: "pointer" } }), R("span", { style: { width: 30, fontSize: 8, color: "#b8c0cb", fontFamily: "var(--font-mono)" } }, `${values.inputGain} dB`))));
+    const zoneRows = Array.from({ length: 8 }, (_, i) => R("div", { key: i, style: { padding: "8px 8px 7px", borderBottom: "1px solid var(--border)", background: i % 2 ? "var(--neutral-50)" : dark } },
+      R("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 } }, R("span", { style: { fontSize: 10, color: "var(--fg-strong)", fontWeight: 700 } }, `ZONE ${i + 1} / CUSTOM NAME`), R("span", { style: { fontSize: 8, color: green } }, "SIGNAL")),
+      R("div", { style: { display: "flex", alignItems: "center", gap: 6 } }, R("button", { onClick: () => this.toggleDeviceMute(dev.id), className: "cp-btn", style: { background: red, color: "#fff", border: "none", padding: "3px 6px", fontSize: 7, fontWeight: 800, cursor: "pointer" } }, dsp.mute ? "UNMUTE" : "MUTE"), R("input", { type: "range", min: -80, max: 12, value: values.outputGain, onChange: e => this.setAudioDashboardValue(dev.id, "outputGain", Number(e.target.value)), style: { flex: 1, accentColor: blue, cursor: "pointer" } }), R("span", { style: { width: 34, fontSize: 8, color: "#b8c0cb", fontFamily: "var(--font-mono)" } }, `${values.outputGain} dB`))));
+    const eqBands = Array.from({ length: 10 }, (_, i) => R("button", { key: i, onClick: () => this.setAudioDashboardValue(dev.id, "eqBand", i + 1), className: "cp-btn", style: { width: 27, height: 22, background: values.eqBand === i + 1 ? blue : "#596574", color: "#fff", border: "1px solid #778596", fontSize: 9, cursor: "pointer" } }, i + 1));
+    const mainCenter = R("div", { style: { display: "flex", flexDirection: "column", gap: 6, minWidth: 0 } },
+      R("div", { style: { display: "flex", background: "#fff", border: "1px solid var(--border)", borderRadius: "var(--radius-md) var(--radius-md) 0 0" } }, ["MAIN", "ROUTING", "CHIMES"].map((name, i) => R("button", { key: name, className: "cp-btn", style: { flex: 1, padding: "8px 4px", border: "none", borderBottom: i === 0 ? `2px solid ${blue}` : "2px solid transparent", background: i === 0 ? "var(--blue-50)" : "#fff", color: i === 0 ? blue : "var(--fg-muted)", fontSize: 9, fontWeight: 800, cursor: "pointer" } }, name))),
+      audioPanel([R("div", { key: "top", style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 5, padding: 7 } }, audioPanel([tiny("Tone control", blue), dashSlider("inputGain", "Tone profile", -10, 10, 1, " dB"), dashSlider("outputGain", "Bass", -12, 12, 1, " dB")], "tone"), audioPanel([tiny("Config min / max volume", blue), dashSlider("volume", "Minimum", -80, 0, 1, " dB"), dashSlider("outputGain", "Default", -80, 12, 1, " dB")], "volume"), audioPanel([tiny("Fault status", blue), R("div", { style: { paddingTop: 10, fontSize: 9, color: green, lineHeight: 2 } }, "DC OFFSET FAULT: NONE", R("br"), "CLIPPING DETECTED: NONE", R("br"), "UNDER TEMPERATURE: NONE")], "fault"))], "main-controls"),
+      audioPanel([R("div", { key: "eqtitle", style: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 10px", borderBottom: "1px solid #46515e" } }, tiny("Output EQ", blue), R("span", { style: { fontSize: 9, color: green } }, "ENABLE EQ: ON")),
+        R("div", { key: "graph", style: { height: 190, margin: "8px 10px", position: "relative", backgroundColor: "var(--neutral-50)", backgroundImage: "linear-gradient(var(--neutral-200) 1px, transparent 1px), linear-gradient(90deg, var(--neutral-200) 1px, transparent 1px)", backgroundSize: "40px 38px", border: "1px solid var(--border)" } }, R("div", { style: { position: "absolute", left: "4%", right: "3%", top: "50%", borderTop: "2px solid var(--fg-muted)" } }), R("div", { style: { position: "absolute", left: "12%", top: "43%", width: 26, height: 26, borderRadius: "50%", background: gold, color: "#222", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800 } }, values.eqBand || 1)),
+        R("div", { key: "bands", style: { display: "flex", alignItems: "center", gap: 4, padding: "4px 10px 8px" } }, tiny("Band", blue), eqBands),
+        R("div", { key: "eqvalues", style: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, padding: "0 10px 9px" } }, dashSlider("eqFrequency", "Frequency", 20, 22000, 10, " Hz", blue), dashSlider("eqGain", "Gain", -12, 12, 0.1, " dB", blue), dashSlider("eqBandwidth", "Bandwidth", 0, 10, 0.1, " dB", blue))], "eq"),
+      audioPanel([R("div", { key: "bottom", style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, padding: 8 } }, tiny("Speaker protection", blue), tiny("Config speaker profile", blue), tiny("NAX stream", green))], "footer"));
+    const advancedBody = R("div", { style: { background: "var(--bg-muted)", color: "var(--fg)", minHeight: "100%", margin: -22, padding: 7, fontFamily: "var(--font-mono)" } },
+      R("div", { style: { display: "grid", gridTemplateColumns: "1.2fr 1fr 1fr 1fr 1.2fr", gap: 6, marginBottom: 6 } },
+        audioPanel([R("div", { style: { color: red, fontSize: 10, fontWeight: 900 } }, "FAULT STATUS: FAULT PRESENT"), R("div", { style: { fontSize: 8, color: "#9aa5b4", lineHeight: 1.7, marginTop: 4 } }, "OVER-CURRENT: NONE", R("br"), "DC OFFSET: NONE", R("br"), "CLIPPING: NONE")], "fault-status", { padding: 9 }),
+        statusCells("LOCAL INPUTS", 8, 2), statusCells("MEDIA STREAMS", 8, 5), statusCells("ZONE OUTPUTS", 8, 1), audioPanel([tiny("Control system", green), R("div", { style: { color: green, fontSize: 10, marginTop: 7 } }, "ONLINE"), R("div", { style: { color: "#9aa5b4", fontSize: 8, marginTop: 4 } }, "IP ID: NONE", R("br"), "ROOM ID: NONE")], "system", { padding: 9 })),
+      R("div", { style: { display: "grid", gridTemplateColumns: "minmax(190px, 1.05fr) minmax(300px, 1.5fr) minmax(210px, 1.05fr)", gap: 6, alignItems: "start" } },
+        audioPanel([R("div", { style: { padding: "7px 9px", color: blue, fontSize: 10, fontWeight: 900, borderBottom: "1px solid #46515e" } }, "INPUTS / GAIN"), inputRows], "inputs"),
+        mainCenter,
+        audioPanel([R("div", { style: { padding: "7px 9px", color: blue, fontSize: 10, fontWeight: 900, borderBottom: "1px solid #46515e" } }, "ZONE OUTPUTS / VOLUME"), zoneRows], "zones")));
+
+    return R("div", { style: { position: "fixed", inset: 0, zIndex: 220, background: "rgba(15,23,32,0.58)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 } },
+      R("div", { style: { width: "100%", maxWidth: 980, height: "min(860px, 94vh)", background: "var(--bg-muted)", borderRadius: 20, boxShadow: "var(--shadow-lg)", display: "flex", flexDirection: "column", overflow: "hidden" } },
+        R("div", { style: { flexShrink: 0, display: "flex", alignItems: "center", gap: 12, padding: "18px 22px 0", background: "#fff", borderBottom: "1px solid var(--border)" } },
+          R("div", { style: { flex: 1 } }, R("div", { style: { fontSize: 22, fontWeight: 800, color: "var(--fg-strong)", fontFamily: "var(--font-display)" } }, "DM-NAX-8ZSA Configuration"), R("div", { style: { fontSize: 11, color: "var(--fg-muted)", marginTop: 4 } }, "Audio Dashboard")),
+          R("button", { onClick: () => this.closeAudioDashboard(), className: "cp-btn", title: "Close", style: { border: "none", background: "none", cursor: "pointer", padding: 6, color: "var(--fg-muted)" } }, this.ic("x", 22))),
+        R("div", { style: { flexShrink: 0, display: "flex", padding: "0 22px", background: "#fff" } }, tabButton("about", "ABOUT"), tabButton("advanced", "ADVANCED")),
+        R("div", { style: { height: 2, background: "var(--divider-accent)", flexShrink: 0 } }),
+        R("div", { style: { flex: 1, minHeight: 0, overflowY: "auto", padding: 22 } }, tab === "about" ? aboutBody : advancedBody)));
   }
 
   // ---- Fader / meter primitives used by the two audio screens ----
